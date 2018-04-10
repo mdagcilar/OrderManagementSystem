@@ -63,24 +63,24 @@ public class Order implements Serializable{
             if(slice.sizeRemaining()==0)continue;
             //TODO could optimise this to not start at the beginning every time
             for(Order matchingSlice:matchingOrder.slices){
-                int msze=matchingSlice.sizeRemaining();
-                if(msze==0)continue;
-                int sze=slice.sizeRemaining();
-                if(sze<=msze){
-                    slice.createFill(sze,initialMarketPrice);
-                    matchingSlice.createFill(sze, initialMarketPrice);
+                int matchingSize=matchingSlice.sizeRemaining();
+                if(matchingSize==0)continue;
+                int remainingSize=slice.sizeRemaining();
+                if(remainingSize<=matchingSize){
+                    slice.createFill(remainingSize,initialMarketPrice);
+                    matchingSlice.createFill(remainingSize, initialMarketPrice);
                     break;
                 }
                 //sze>msze
-                slice.createFill(msze,initialMarketPrice);
-                matchingSlice.createFill(msze, initialMarketPrice);
+                slice.createFill(matchingSize,initialMarketPrice);
+                matchingSlice.createFill(matchingSize, initialMarketPrice);
             }
-            int sze=slice.sizeRemaining();
+            int remainingSize=slice.sizeRemaining();
             int mParent=matchingOrder.sizeRemaining()-matchingOrder.sliceSizes();
-            if(sze>0 && mParent>0){
-                if(sze>=mParent){
-                    slice.createFill(sze,initialMarketPrice);
-                    matchingOrder.createFill(sze, initialMarketPrice);
+            if(remainingSize>0 && mParent>0){
+                if(remainingSize>=mParent){
+                    slice.createFill(remainingSize,initialMarketPrice);
+                    matchingOrder.createFill(remainingSize, initialMarketPrice);
                 }else{
                     slice.createFill(mParent,initialMarketPrice);
                     matchingOrder.createFill(mParent, initialMarketPrice);
@@ -91,24 +91,24 @@ public class Order implements Serializable{
         }
         if(sizeRemaining()>0){
             for(Order matchingSlice:matchingOrder.slices){
-                int msze=matchingSlice.sizeRemaining();
-                if(msze==0)continue;
-                int sze=sizeRemaining();
-                if(sze<=msze){
-                    createFill(sze,initialMarketPrice);
-                    matchingSlice.createFill(sze, initialMarketPrice);
+                int matchingSize=matchingSlice.sizeRemaining();
+                if(matchingSize==0)continue;
+                int remainingSize=sizeRemaining();
+                if(remainingSize<=matchingSize){
+                    createFill(remainingSize,initialMarketPrice);
+                    matchingSlice.createFill(remainingSize, initialMarketPrice);
                     break;
                 }
                 //sze>msze
-                createFill(msze,initialMarketPrice);
-                matchingSlice.createFill(msze, initialMarketPrice);
+                createFill(matchingSize,initialMarketPrice);
+                matchingSlice.createFill(matchingSize, initialMarketPrice);
             }
-            int sze=sizeRemaining();
+            int remainingSize=sizeRemaining();
             int mParent=matchingOrder.sizeRemaining()-matchingOrder.sliceSizes();
-            if(sze>0 && mParent>0){
-                if(sze>=mParent){
-                    createFill(sze,initialMarketPrice);
-                    matchingOrder.createFill(sze, initialMarketPrice);
+            if(remainingSize>0 && mParent>0){
+                if(remainingSize>=mParent){
+                    createFill(remainingSize,initialMarketPrice);
+                    matchingOrder.createFill(remainingSize, initialMarketPrice);
                 }else{
                     createFill(mParent,initialMarketPrice);
                     matchingOrder.createFill(mParent, initialMarketPrice);
