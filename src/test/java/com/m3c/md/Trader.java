@@ -22,35 +22,35 @@ public class Trader extends Thread implements TradeScreen {
         this.port = port;
     }
 
-    ObjectInputStream is;
-    ObjectOutputStream os;
+    ObjectInputStream objectInputStream;
+    ObjectOutputStream objectOutputStream;
 
     public void run() {
         //OM will connect to us
         try {
             omConn = ServerSocketFactory.getDefault().createServerSocket(port).accept();
 
-            //is=new ObjectInputStream( omConn.getInputStream());
+            //objectInputStream=new ObjectInputStream( omConn.getInputStream());
             InputStream s = omConn.getInputStream(); //if i try to create an objectinputstream before we have data it will block
             while (true) {
                 if (0 < s.available()) {
-                    is = new ObjectInputStream(s);  //TODO check if we need to create each time. this will block if no data, but maybe we can still try to create it once instead of repeatedly
-                    api method = (api) is.readObject();
+                    objectInputStream = new ObjectInputStream(s);  //TODO check if we need to create each time. this will block if no data, but maybe we can still try to create it once instead of repeatedly
+                    api method = (api) objectInputStream.readObject();
                     System.out.println(Thread.currentThread().getName() + " calling: " + method);
                     switch (method) {
                         case newOrder:
-                            newOrder(is.readInt(), (Order) is.readObject());
+                            newOrder(objectInputStream.readInt(), (Order) objectInputStream.readObject());
                             break;
                         case price:
-                            price(is.readInt(), (Order) is.readObject());
+                            price(objectInputStream.readInt(), (Order) objectInputStream.readObject());
                             break;
                         case cross:
-                            is.readInt();
-                            is.readObject();
+                            objectInputStream.readInt();
+                            objectInputStream.readObject();
                             break; //TODO
                         case fill:
-                            is.readInt();
-                            is.readObject();
+                            objectInputStream.readInt();
+                            objectInputStream.readObject();
                             break; //TODO
                     }
                 } else {
@@ -74,19 +74,19 @@ public class Trader extends Thread implements TradeScreen {
 
     @Override
     public void acceptOrder(int id) throws IOException {
-        os = new ObjectOutputStream(omConn.getOutputStream());
-        os.writeObject("acceptOrder");
-        os.writeInt(id);
-        os.flush();
+        objectOutputStream = new ObjectOutputStream(omConn.getOutputStream());
+        objectOutputStream.writeObject("acceptOrder");
+        objectOutputStream.writeInt(id);
+        objectOutputStream.flush();
     }
 
     @Override
     public void sliceOrder(int id, int sliceSize) throws IOException {
-        os = new ObjectOutputStream(omConn.getOutputStream());
-        os.writeObject("sliceOrder");
-        os.writeInt(id);
-        os.writeInt(sliceSize);
-        os.flush();
+        objectOutputStream = new ObjectOutputStream(omConn.getOutputStream());
+        objectOutputStream.writeObject("sliceOrder");
+        objectOutputStream.writeInt(id);
+        objectOutputStream.writeInt(sliceSize);
+        objectOutputStream.flush();
     }
 
     @Override

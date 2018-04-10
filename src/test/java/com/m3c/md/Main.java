@@ -10,12 +10,12 @@ import java.util.logging.Logger;
 
 
 public class Main {
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
         System.out.println("TEST: this program tests ordermanager");
 
         //start sample clients
-        MockClient c1 = new MockClient("Client 1", 2000);
-        c1.start();
+        MockClient mockClient = new MockClient("Client 1", 2000);
+        mockClient.start();
         (new MockClient("Client 2", 2001)).start();
 
         //start sample routers
@@ -35,7 +35,7 @@ public class Main {
 }
 
 class MockClient extends Thread {
-    int port;
+    private int port;
 
     MockClient(String name, int port) {
         this.port = port;
@@ -44,16 +44,16 @@ class MockClient extends Thread {
 
     public void run() {
         try {
-            SampleClient client = new SampleClient(port);
+            SampleClient sampleClient = new SampleClient(port);
             if (port == 2000) {
                 //TODO why does this take an arg?
-                client.sendOrder(null);
-                int id = client.sendOrder(null);
+                sampleClient.sendOrder(null);
+                int id = sampleClient.sendOrder(null);
                 //TODO client.sendCancel(id);
-                client.messageHandler();
+                sampleClient.messageHandler();
             } else {
-                client.sendOrder(null);
-                client.messageHandler();
+                sampleClient.sendOrder(null);
+                sampleClient.messageHandler();
             }
         } catch (IOException e) {
             // TODO Auto-generated catch block

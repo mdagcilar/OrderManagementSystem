@@ -23,8 +23,8 @@ public class SampleRouter extends Thread implements Router {
         this.port = port;
     }
 
-    ObjectInputStream is;
-    ObjectOutputStream os;
+    ObjectInputStream objectInputStream;
+    ObjectOutputStream objectOutputStream;
 
     public void run() {
         //OM will connect to us
@@ -32,15 +32,15 @@ public class SampleRouter extends Thread implements Router {
             omConn = ServerSocketFactory.getDefault().createServerSocket(port).accept();
             while (true) {
                 if (0 < omConn.getInputStream().available()) {
-                    is = new ObjectInputStream(omConn.getInputStream());
-                    Router.api methodName = (Router.api) is.readObject();
-                    System.out.println("Order Router recieved method call for:" + methodName);
+                    objectInputStream = new ObjectInputStream(omConn.getInputStream());
+                    Router.api methodName = (Router.api) objectInputStream.readObject();
+                    System.out.println("Order Router received method call for:" + methodName);
                     switch (methodName) {
                         case routeOrder:
-                            routeOrder(is.readInt(), is.readInt(), is.readInt(), (Instrument) is.readObject());
+                            routeOrder(objectInputStream.readInt(), objectInputStream.readInt(), objectInputStream.readInt(), (Instrument) objectInputStream.readObject());
                             break;
                         case priceAtSize:
-                            priceAtSize(is.readInt(), is.readInt(), (Instrument) is.readObject(), is.readInt());
+                            priceAtSize(objectInputStream.readInt(), objectInputStream.readInt(), (Instrument) objectInputStream.readObject(), objectInputStream.readInt());
                             break;
                     }
                 } else {
@@ -59,13 +59,13 @@ public class SampleRouter extends Thread implements Router {
         //TODO have this similar to the market price of the instrument
         double fillPrice = 199 * RANDOM_NUM_GENERATOR.nextDouble();
         Thread.sleep(42);
-        os = new ObjectOutputStream(omConn.getOutputStream());
-        os.writeObject("newFill");
-        os.writeInt(id);
-        os.writeInt(sliceId);
-        os.writeInt(fillSize);
-        os.writeDouble(fillPrice);
-        os.flush();
+        objectOutputStream = new ObjectOutputStream(omConn.getOutputStream());
+        objectOutputStream.writeObject("newFill");
+        objectOutputStream.writeInt(id);
+        objectOutputStream.writeInt(sliceId);
+        objectOutputStream.writeInt(fillSize);
+        objectOutputStream.writeDouble(fillPrice);
+        objectOutputStream.flush();
     }
 
     @Override
@@ -74,11 +74,11 @@ public class SampleRouter extends Thread implements Router {
 
     @Override
     public void priceAtSize(int id, int sliceId, Instrument i, int size) throws IOException {
-        os = new ObjectOutputStream(omConn.getOutputStream());
-        os.writeObject("bestPrice");
-        os.writeInt(id);
-        os.writeInt(sliceId);
-        os.writeDouble(199 * RANDOM_NUM_GENERATOR.nextDouble());
-        os.flush();
+        objectOutputStream = new ObjectOutputStream(omConn.getOutputStream());
+        objectOutputStream.writeObject("bestPrice");
+        objectOutputStream.writeInt(id);
+        objectOutputStream.writeInt(sliceId);
+        objectOutputStream.writeDouble(199 * RANDOM_NUM_GENERATOR.nextDouble());
+        objectOutputStream.flush();
     }
 }

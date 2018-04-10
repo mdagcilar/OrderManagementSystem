@@ -30,19 +30,19 @@ public class SampleClient extends Mock implements Client {
     @Override
     public int sendOrder(Object par0) throws IOException {
         int size = RANDOM_NUM_GENERATOR.nextInt(5000);
-        int instid = RANDOM_NUM_GENERATOR.nextInt(3);
+        int instrumentID = RANDOM_NUM_GENERATOR.nextInt(3);
         Instrument instrument = INSTRUMENTS[RANDOM_NUM_GENERATOR.nextInt(INSTRUMENTS.length)];
-        NewOrderSingle nos = new NewOrderSingle(size, instid, instrument);
+        NewOrderSingle newOrderSingle = new NewOrderSingle(size, instrumentID, instrument);
 
-        show("sendOrder: id=" + id + " size=" + size + " instrument=" + INSTRUMENTS[instid].toString());
-        OUT_QUEUE.put(id, nos);
+        show("sendOrder: id=" + id + " size=" + size + " instrument=" + INSTRUMENTS[instrumentID].toString());
+        OUT_QUEUE.put(id, newOrderSingle);
         if (omConn.isConnected()) {
-            ObjectOutputStream os = new ObjectOutputStream(omConn.getOutputStream());
-            os.writeObject("newOrderSingle");
-            //os.writeObject("35=D;");
-            os.writeInt(id);
-            os.writeObject(nos);
-            os.flush();
+            ObjectOutputStream objectOutputStream = new ObjectOutputStream(omConn.getOutputStream());
+            objectOutputStream.writeObject("newOrderSingle");
+            //objectOutputStream.writeObject("35=D;");
+            objectOutputStream.writeInt(id);
+            objectOutputStream.writeObject(newOrderSingle);
+            objectOutputStream.flush();
         }
         return id++;
     }
@@ -79,18 +79,18 @@ public class SampleClient extends Mock implements Client {
     @Override
     public void messageHandler() {
 
-        ObjectInputStream is;
+        ObjectInputStream objectInputStream;
         try {
             while (true) {
-                //is.wait(); //this throws an exception!!
+                //objectInputStream.wait(); //this throws an exception!!
                 while (0 < omConn.getInputStream().available()) {
-                    is = new ObjectInputStream(omConn.getInputStream());
-                    String fix = (String) is.readObject();
+                    objectInputStream = new ObjectInputStream(omConn.getInputStream());
+                    String fix = (String) objectInputStream.readObject();
                     System.out.println(Thread.currentThread().getName() + " received fix message: " + fix);
                     String[] fixTags = fix.split(";");
                     int OrderId = -1;
                     char MsgType;
-                    int OrdStatus;
+
                     methods whatToDo = methods.dontKnow;
                     //String[][] fixTagsValues=new String[fixTags.length][2];
                     for (int i = 0; i < fixTags.length; i++) {
@@ -104,7 +104,7 @@ public class SampleClient extends Mock implements Client {
                                 if (MsgType == 'A') whatToDo = methods.newOrderSingleAcknowledgement;
                                 break;
                             case "39":
-                                OrdStatus = tag_value[1].charAt(0);
+                                int OrdStatus = tag_value[1].charAt(0);
                                 break;
                         }
                     }
