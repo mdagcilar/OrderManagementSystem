@@ -27,12 +27,14 @@ public class OrderManager {
     private Socket trader;
 
     private Socket connect(InetSocketAddress location) throws InterruptedException {
+        //TODO: connected is always false
         boolean connected = false;
         int tryCounter = 0;
         while (!connected && tryCounter < 600) {
             try {
                 Socket socket = new Socket(location.getHostName(), location.getPort());
                 socket.setKeepAlive(true);
+                System.out.println("Socket connection successful");
                 return socket;
             } catch (IOException e) {
                 Thread.sleep(1000);
@@ -44,48 +46,51 @@ public class OrderManager {
     }
 
     //@param args the command line arguments
-    public OrderManager(InetSocketAddress[] orderRouters, InetSocketAddress[] clients, InetSocketAddress trader, LiveMarketData liveMarketData) throws IOException, ClassNotFoundException, InterruptedException {
+    public OrderManager(InetSocketAddress[] orderRoutersAddresses, InetSocketAddress[] clientsInetAddresses, InetSocketAddress traderInetAddress,
+                        LiveMarketData liveMarketData) throws IOException, ClassNotFoundException, InterruptedException {
         this.liveMarketData = liveMarketData;
-        this.trader = connect(trader);
+        this.trader = connect(traderInetAddress);
+
+
         //for the router connections, copy the input array into our object field.
         //but rather than taking the address we create a socket+ephemeral port and connect it to the address
-        this.orderRouters = new Socket[orderRouters.length];
-        int i = 0; //need a counter for the the output array
-        for (InetSocketAddress location : orderRouters) {
-            this.orderRouters[i] = connect(location);
-            i++;
+        this.orderRouters = new Socket[orderRoutersAddresses.length];
+        for (int i = 0; i < orderRoutersAddresses.length; i++) {
+            this.orderRouters[i] = connect(orderRoutersAddresses[i]);
         }
 
         //repeat for the client connections
-        this.clients = new Socket[clients.length];
-        i = 0;
-        for (InetSocketAddress location : clients) {
-            this.clients[i] = connect(location);
-            i++;
+        this.clients = new Socket[clientsInetAddresses.length];
+        for (int j = 0; j < clientsInetAddresses.length; j++) {
+            this.clients[j] = connect(clientsInetAddresses[j]);
         }
-        int clientId, routerId;
-        Socket client, router;
+
         //main loop, wait for a message, then process it
         while (true) {
             //TODO this is pretty cpu intensive, use a more modern polling/interrupt/select approach
             //we want to use the arrayindex as the clientId, so use traditional for loop instead of foreach
-            for (clientId = 0; clientId < this.clients.length; clientId++) { //check if we have data on any of the sockets
-                client = this.clients[clientId];
+            for (int clientIndex = 0; clientIndex < clientsInetAddresses.length; clientIndex++) { //check if we have data on any of the sockets
+                Socket client = clients[clientIndex];
+
+                // if no socket available, create new stream
                 if (0 < client.getInputStream().available()) { //if we have part of a message ready to read, assuming this doesn't fragment messages
                     ObjectInputStream objectInputStream = new ObjectInputStream(client.getInputStream()); //create an object inputstream, this is a pretty stupid way of doing it, why not create it once rather than every time around the loop
                     String method = (String) objectInputStream.readObject();
                     System.out.println(Thread.currentThread().getName() + " calling " + method);
+
                     switch (method) { //determine the type of message and process it
                         //call the newOrder message with the clientId and the message (clientMessageId,NewOrderSingle)
                         case "newOrderSingle":
-                            newOrder(clientId, objectInputStream.readInt(), (NewOrderSingle) objectInputStream.readObject());
+                            newOrder(clientIndex, objectInputStream.readInt(), (NewOrderSingle) objectInputStream.readObject());
                             break;
                         //TODO create a default case which errors with "Unknown message type"+...
                     }
                 }
             }
-            for (routerId = 0; routerId < this.orderRouters.length; routerId++) { //check if we have data on any of the sockets
-                router = this.orderRouters[routerId];
+
+            for (int routerIndex = 0; routerIndex < orderRoutersAddresses.length; routerIndex++) { //check if we have data on any of the sockets
+                Socket router = orderRouters[routerIndex];
+
                 if (0 < router.getInputStream().available()) { //if we have part of a message ready to read, assuming this doesn't fragment messages
                     ObjectInputStream objectInputStream = new ObjectInputStream(router.getInputStream()); //create an object inputstream, this is a pretty stupid way of doing it, why not create it once rather than every time around the loop
                     String method = (String) objectInputStream.readObject();
@@ -95,7 +100,7 @@ public class OrderManager {
                             int OrderId = objectInputStream.readInt();
                             int SliceId = objectInputStream.readInt();
                             Order slice = orders.get(OrderId).slices.get(SliceId);
-                            slice.bestPrices[routerId] = objectInputStream.readDouble();
+                            slice.bestPrices[routerIndex] = objectInputStream.readDouble();
                             slice.bestPriceCount += 1;
                             if (slice.bestPriceCount == slice.bestPrices.length)
                                 reallyRouteOrder(SliceId, slice);
@@ -107,7 +112,7 @@ public class OrderManager {
                 }
             }
 
-            if (0 < this.trader.getInputStream().available()) {
+            if (0 < trader.getInputStream().available()) {
                 ObjectInputStream objectInputStream = new ObjectInputStream(this.trader.getInputStream());
                 String method = (String) objectInputStream.readObject();
                 System.out.println(Thread.currentThread().getName() + " calling " + method);

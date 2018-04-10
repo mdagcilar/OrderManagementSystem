@@ -1,4 +1,6 @@
-package com.m3c.md;
+package com.m3c.md.OrderClient;
+
+import com.m3c.md.OrderClient.SampleClient;
 
 import java.io.IOException;
 

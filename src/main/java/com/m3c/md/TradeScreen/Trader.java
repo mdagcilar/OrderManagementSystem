@@ -1,4 +1,4 @@
-package com.m3c.md;
+package com.m3c.md.TradeScreen;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -17,7 +17,7 @@ public class Trader extends Thread implements TradeScreen {
     private static Socket omConn;
     private int port;
 
-    Trader(String name, int port) {
+    public Trader(String name, int port) {
         this.setName(name);
         this.port = port;
     }
@@ -28,7 +28,7 @@ public class Trader extends Thread implements TradeScreen {
     public void run() {
         //OM will connect to us
         try {
-            omConn = ServerSocketFactory.getDefault().createServerSocket(port).accept();
+            omConn = ServerSocketFactory.getDefault().createServerSocket(port). accept();
 
             //objectInputStream=new ObjectInputStream( omConn.getInputStream());
             InputStream s = omConn.getInputStream(); //if i try to create an objectinputstream before we have data it will block

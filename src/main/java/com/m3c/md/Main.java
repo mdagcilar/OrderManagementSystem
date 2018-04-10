@@ -1,7 +1,11 @@
 package com.m3c.md;
 
 import com.m3c.md.LiveMarketData.LiveMarketData;
+import com.m3c.md.LiveMarketData.SampleLiveMarketData;
+import com.m3c.md.OrderClient.SampleClient;
 import com.m3c.md.OrderManager.OrderManager;
+import com.m3c.md.OrderRouter.SampleRouter;
+import com.m3c.md.TradeScreen.Trader;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -30,7 +34,7 @@ public class Main {
                 new InetSocketAddress("localhost", 2011)};
         InetSocketAddress trader = new InetSocketAddress("localhost", 2020);
         LiveMarketData liveMarketData = new SampleLiveMarketData();
-        (new MockOM("Order Manager", routers, clients, trader, liveMarketData)).start();
+        (new MockOrderManager("Order Manager", routers, clients, trader, liveMarketData)).start();
     }
 }
 
@@ -63,13 +67,13 @@ class MockClient extends Thread {
     }
 }
 
-class MockOM extends Thread {
+class MockOrderManager extends Thread {
     InetSocketAddress[] clients;
     InetSocketAddress[] routers;
     InetSocketAddress trader;
     LiveMarketData liveMarketData;
 
-    MockOM(String name, InetSocketAddress[] routers, InetSocketAddress[] clients, InetSocketAddress trader, LiveMarketData liveMarketData) {
+    MockOrderManager(String name, InetSocketAddress[] routers, InetSocketAddress[] clients, InetSocketAddress trader, LiveMarketData liveMarketData) {
         this.clients = clients;
         this.routers = routers;
         this.trader = trader;
@@ -83,7 +87,7 @@ class MockOM extends Thread {
             //In order to debug constructors you can do F5 F7 F5
             new OrderManager(routers, clients, trader, liveMarketData);
         } catch (IOException | ClassNotFoundException | InterruptedException ex) {
-            Logger.getLogger(MockOM.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(MockOrderManager.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 }

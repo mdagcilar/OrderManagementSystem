@@ -1,4 +1,4 @@
-package com.m3c.md;
+package com.m3c.md.LiveMarketData;
 
 import java.util.Random;
 

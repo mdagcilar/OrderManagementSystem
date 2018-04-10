@@ -1,4 +1,4 @@
-package com.m3c.md;
+package com.m3c.md.OrderClient;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -34,7 +34,7 @@ public class SampleClient extends Mock implements Client {
         Instrument instrument = INSTRUMENTS[RANDOM_NUM_GENERATOR.nextInt(INSTRUMENTS.length)];
         NewOrderSingle newOrderSingle = new NewOrderSingle(size, instrumentID, instrument);
 
-        show("sendOrder: id=" + id + " size=" + size + " instrument=" + INSTRUMENTS[instrumentID].toString());
+        Mock.show("sendOrder: id=" + id + " size=" + size + " instrument=" + INSTRUMENTS[instrumentID].toString());
         OUT_QUEUE.put(id, newOrderSingle);
         if (omConn.isConnected()) {
             ObjectOutputStream objectOutputStream = new ObjectOutputStream(omConn.getOutputStream());
@@ -49,7 +49,7 @@ public class SampleClient extends Mock implements Client {
 
     @Override
     public void sendCancel(int idToCancel) {
-        show("sendCancel: id=" + idToCancel);
+        Mock.show("sendCancel: id=" + idToCancel);
         if (omConn.isConnected()) {
             //OMconnection.sendMessage("cancel",idToCancel);
         }
@@ -57,18 +57,18 @@ public class SampleClient extends Mock implements Client {
 
     @Override
     public void partialFill(Order order) {
-        show("" + order);
+        Mock.show("" + order);
     }
 
     @Override
     public void fullyFilled(Order order) {
-        show("" + order);
+        Mock.show("" + order);
         OUT_QUEUE.remove(order.ClientOrderID);
     }
 
     @Override
     public void cancelled(Order order) {
-        show("" + order);
+        Mock.show("" + order);
         OUT_QUEUE.remove(order.ClientOrderID);
     }
 
@@ -120,7 +120,7 @@ public class SampleClient extends Mock implements Client {
 						case 'P':partialFill(message);break;
 						case 'F':fullyFilled(message);
 					}*/
-                    show("");
+                    Mock.show("");
                 }
             }
         } catch (IOException | ClassNotFoundException e) {
