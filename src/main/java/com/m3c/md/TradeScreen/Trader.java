@@ -6,6 +6,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.HashMap;
+import java.util.Map;
 
 import javax.net.ServerSocketFactory;
 
@@ -13,7 +14,7 @@ import com.m3c.md.OrderManager.Order;
 import com.m3c.md.TradeScreen.TradeScreen;
 
 public class Trader extends Thread implements TradeScreen {
-    private HashMap<Integer, Order> orders = new HashMap<Integer, Order>();
+    private Map<Integer, Order> orders = new HashMap<>();
     private static Socket omConn;
     private int port;
 
@@ -31,26 +32,31 @@ public class Trader extends Thread implements TradeScreen {
             omConn = ServerSocketFactory.getDefault().createServerSocket(port). accept();
 
             //objectInputStream=new ObjectInputStream( omConn.getInputStream());
-            InputStream s = omConn.getInputStream(); //if i try to create an objectinputstream before we have data it will block
+            InputStream inputStream = omConn.getInputStream(); //if i try to create an objectinputstream before we have data it will block
             while (true) {
-                if (0 < s.available()) {
-                    objectInputStream = new ObjectInputStream(s);  //TODO check if we need to create each time. this will block if no data, but maybe we can still try to create it once instead of repeatedly
+                if (0 < inputStream.available()) {
+                    objectInputStream = new ObjectInputStream(inputStream);  //TODO check if we need to create each time. this will block if no data, but maybe we can still try to create it once instead of repeatedly
                     api method = (api) objectInputStream.readObject();
-                    System.out.println(Thread.currentThread().getName() + " calling: " + method);
+
+                    // stored orderID and Order objects in variables, opposed to calling each time. And also so we can use the variables in prints
+                    int orderID = objectInputStream.readInt();
+                    Order order = (Order) objectInputStream.readObject();
+
+                    System.out.println(Thread.currentThread().getName() + " calling: " + method + ", with OrderID: " + orderID);
                     switch (method) {
                         case newOrder:
-                            newOrder(objectInputStream.readInt(), (Order) objectInputStream.readObject());
+                            newOrder(orderID, order);
                             break;
                         case price:
-                            price(objectInputStream.readInt(), (Order) objectInputStream.readObject());
+                            price(orderID, order);
                             break;
                         case cross:
-                            objectInputStream.readInt();
-                            objectInputStream.readObject();
+//                            objectInputStream.readInt();
+//                            objectInputStream.readObject();
                             break; //TODO
                         case fill:
-                            objectInputStream.readInt();
-                            objectInputStream.readObject();
+//                            objectInputStream.readInt();
+//                            objectInputStream.readObject();
                             break; //TODO
                     }
                 } else {

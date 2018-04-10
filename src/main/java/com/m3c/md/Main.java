@@ -6,6 +6,7 @@ import com.m3c.md.OrderClient.SampleClient;
 import com.m3c.md.OrderManager.OrderManager;
 import com.m3c.md.OrderRouter.SampleRouter;
 import com.m3c.md.TradeScreen.Trader;
+import org.apache.log4j.PropertyConfigurator;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -14,8 +15,12 @@ import java.util.logging.Logger;
 
 
 public class Main {
+    private static org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger(Main.class);
+
     public static void main(String[] args) {
-        System.out.println("TEST: this program tests ordermanager");
+        PropertyConfigurator.configure("src/main/resources/log4j.properties");
+
+        logger.info("TEST: this program tests ordermanager");
 
         //start sample clients
         MockClient mockClient = new MockClient("Client 1", 2000);

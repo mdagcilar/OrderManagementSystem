@@ -13,11 +13,14 @@ import java.util.Map;
 
 import com.m3c.md.Database.Database;
 import com.m3c.md.LiveMarketData.LiveMarketData;
+import com.m3c.md.Main;
 import com.m3c.md.OrderClient.NewOrderSingle;
 import com.m3c.md.OrderRouter.Router;
 import com.m3c.md.TradeScreen.TradeScreen;
 
 public class OrderManager {
+    private static org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger(Main.class);
+
     private static LiveMarketData liveMarketData;
     private HashMap<Integer, Order> orders = new HashMap<Integer, Order>(); //debugger will do this line as it gives state to the object
     //currently recording the number of new order messages we get. TODO why? use it for more?
@@ -34,14 +37,14 @@ public class OrderManager {
             try {
                 Socket socket = new Socket(location.getHostName(), location.getPort());
                 socket.setKeepAlive(true);
-                System.out.println("Socket connection successful");
+                logger.info("Socket connection successful - " + location);
                 return socket;
             } catch (IOException e) {
                 Thread.sleep(1000);
                 tryCounter++;
             }
         }
-        System.out.println("Failed to connect to " + location.toString());
+        logger.error("Failed to connect to " + location.toString());
         return null;
     }
 
@@ -152,7 +155,7 @@ public class OrderManager {
     public void acceptOrder(int id) throws IOException {
         Order order = orders.get(id);
         if (order.OrdStatus != 'A') { //Pending New
-            System.out.println("error accepting order that has already been accepted");
+            logger.error("Error accepting order that has already been accepted");
             return;
         }
         order.OrdStatus = '0'; //New
@@ -170,7 +173,7 @@ public class OrderManager {
         //slice the order. We have to check this is a valid size.
         //Order has a list of slices, and a list of fills, each slice is a childorder and each fill is associated with either a child order or the original order
         if (sliceSize > order.sizeRemaining() - order.sliceSizes()) {
-            System.out.println("error sliceSize is bigger than remaining size to be filled on the order");
+            logger.error("error sliceSize is bigger than remaining size to be filled on the order");
             return;
         }
         int sliceId = order.newSlice(sliceSize);

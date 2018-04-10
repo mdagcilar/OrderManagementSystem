@@ -8,13 +8,17 @@ import java.net.Socket;
 import java.util.HashMap;
 import java.util.Random;
 
+import com.m3c.md.Main;
 import com.m3c.md.OrderClient.Client;
 import com.m3c.md.OrderClient.NewOrderSingle;
 import com.m3c.md.OrderManager.Order;
 import com.m3c.md.Ref.Instrument;
 import com.m3c.md.Ref.Ric;
+//import com.sun.tools.corba.se.idl.constExpr.Or;
 
 public class SampleClient extends Mock implements Client {
+    private static org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger(Main.class);
+
     private static final Random RANDOM_NUM_GENERATOR = new Random();
     private static final Instrument[] INSTRUMENTS = {new Instrument(new Ric("VOD.L")), new Instrument(new Ric("BP.L")), new Instrument(new Ric("BT.L"))};
     private static final HashMap OUT_QUEUE = new HashMap(); //queue for outgoing orders
@@ -130,7 +134,7 @@ public class SampleClient extends Mock implements Client {
     }
 
     void newOrderSingleAcknowledgement(int OrderId) {
-        System.out.println(Thread.currentThread().getName() + " called newOrderSingleAcknowledgement");
+        logger.info(Thread.currentThread().getName() + " called newOrderSingleAcknowledgement, with OrderID: " + OrderId);
         //do nothing, as not recording so much state in the NOS class at present
     }
 /*listen for connections
