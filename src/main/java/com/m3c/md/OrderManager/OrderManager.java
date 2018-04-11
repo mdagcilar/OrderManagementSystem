@@ -84,13 +84,18 @@ public class OrderManager {
                 Socket router = orderRouters[routerIndex];
 
                 if (0 < router.getInputStream().available()) { //if we have part of a message ready to read, assuming this doesn't fragment messages
+
                     objectInputStream = new ObjectInputStream(router.getInputStream()); //create an object inputstream, this is a pretty stupid way of doing it, why not create it once rather than every time around the loop
+
                     String method = (String) objectInputStream.readObject();
-                    System.out.println(Thread.currentThread().getName() + " calling " + method);
+                    int OrderId = objectInputStream.readInt();
+                    int SliceId = objectInputStream.readInt();
+
+                    System.out.println(Thread.currentThread().getName() + " calling " + method + ", with OrderID: " + OrderId);
+
                     switch (method) { //determine the type of message and process it
                         case "bestPrice":
-                            int OrderId = objectInputStream.readInt();
-                            int SliceId = objectInputStream.readInt();
+                            //TODO: define bestPrice() method
                             Order slice = orders.get(OrderId).slices.get(SliceId);
                             slice.bestPrices[routerIndex] = objectInputStream.readDouble();
                             slice.bestPriceCount += 1;
@@ -98,7 +103,7 @@ public class OrderManager {
                                 reallyRouteOrder(SliceId, slice);
                             break;
                         case "newFill":
-                            newFill(objectInputStream.readInt(), objectInputStream.readInt(), objectInputStream.readInt(), objectInputStream.readDouble());
+                            newFill(OrderId, SliceId, objectInputStream.readInt(), objectInputStream.readDouble());
                             break;
                     }
                 }
@@ -174,10 +179,11 @@ public class OrderManager {
             return;
         }
         order.OrdStatus = '0'; //New
-        ObjectOutputStream objectOutputStream = new ObjectOutputStream(clients[order.clientid].getOutputStream());
+
+        ObjectOutputStream objectOutputStream = new ObjectOutputStream(clients[order.clientId].getOutputStream());
         //newOrderSingle acknowledgement
         //ClOrdId is 11=
-        objectOutputStream.writeObject("11=" + order.ClientOrderID + ";35=A;39=0");
+        objectOutputStream.writeObject("11=" + order.clientOrderID + ";35=A;39=0");
         objectOutputStream.flush();
 
         price(id, order);
@@ -200,9 +206,15 @@ public class OrderManager {
         }
     }
 
-    private void internalCross(int id, Order order) throws IOException {
+    private void internalCross(int orderID, Order order) throws IOException {
+//        if (orders.containsKey(id)){
+//            Order hashmapOrder = orders.get(id);
+//            //hashmapOrder.instrument
+//        }
+
         for (Map.Entry<Integer, Order> entry : orders.entrySet()) {
-            if (entry.getKey().intValue() == id) continue;
+
+            if (entry.getKey().intValue() == orderID) continue;
             Order matchingOrder = entry.getValue();
             if (!(matchingOrder.instrument.equals(order.instrument) && matchingOrder.initialMarketPrice == order.initialMarketPrice))
                 continue;
@@ -210,7 +222,7 @@ public class OrderManager {
             int sizeBefore = order.sizeRemaining();
             order.cross(matchingOrder);
             if (sizeBefore != order.sizeRemaining()) {
-                sendOrderToTrader(id, order, TradeScreen.api.cross);
+                sendOrderToTrader(orderID, order, TradeScreen.api.cross);
             }
         }
     }
@@ -255,7 +267,7 @@ public class OrderManager {
         }
         ObjectOutputStream objectOutputStream = new ObjectOutputStream(orderRouters[minIndex].getOutputStream());
         objectOutputStream.writeObject(Router.api.routeOrder);
-        objectOutputStream.writeInt(order.id);
+        objectOutputStream.writeInt(order.clientId);
         objectOutputStream.writeInt(sliceId);
         objectOutputStream.writeInt(order.sizeRemaining());
         objectOutputStream.writeObject(order.instrument);

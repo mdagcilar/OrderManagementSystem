@@ -29,15 +29,16 @@ public class Main {
 
         //start sample routers
         (new SampleRouter("Router LSE", 2010)).start();
-        (new SampleRouter("Router BATE", 2011)).start();
+        //(new SampleRouter("Router BATE", 2011)).start();
 
         (new Trader("Trader James", 2020)).start();
         //start order manager
         InetSocketAddress[] clients = {new InetSocketAddress("localhost", 2000)};
 //        InetSocketAddress[] clients = {new InetSocketAddress("localhost", 2000),
 //                new InetSocketAddress("localhost", 2001)};
-        InetSocketAddress[] routers = {new InetSocketAddress("localhost", 2010),
-                new InetSocketAddress("localhost", 2011)};
+        InetSocketAddress[] routers = {new InetSocketAddress("localhost", 2010)};
+//        InetSocketAddress[] routers = {new InetSocketAddress("localhost", 2010),
+//                new InetSocketAddress("localhost", 2011)};
         InetSocketAddress trader = new InetSocketAddress("localhost", 2020);
         LiveMarketData liveMarketData = new SampleLiveMarketData();
         (new MockOrderManager("Order Manager", routers, clients, trader, liveMarketData)).start();
@@ -58,7 +59,7 @@ class MockClient extends Thread {
             if (port == 2000) {
                 //TODO why does this take an arg?
                 sampleClient.sendOrder(null);
-                int id = sampleClient.sendOrder(null);
+                //int id = sampleClient.sendOrder(null);
                 //TODO client.sendCancel(id);
                 sampleClient.messageHandler();
             } else {

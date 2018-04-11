@@ -5,13 +5,34 @@ import java.util.ArrayList;
 
 import com.m3c.md.Ref.Instrument;
 
+//TODO: add unique order ID through the constructor
 public class Order implements Serializable {
-    public int id; //TODO these should all be longs
-    short orderRouter;
-    public int ClientOrderID; //TODO refactor to lowercase C
-    int size;
+
+    private long uniqueOrderID, quantity;
+    private double price;
+
+
+    public ArrayList<Order> slices;
+    public ArrayList<Fill> fills;
+
+    public int clientId, clientOrderID, size, bestPriceCount;
+    public double initialMarketPrice;
+
     double[] bestPrices;
-    int bestPriceCount;
+
+    public Instrument instrument;
+    short orderRouter;
+
+    char OrdStatus = 'A'; //OrdStatus is Fix 39, 'A' is 'Pending New'
+
+    public Order(int clientId, int clientOrderID, Instrument instrument, int size) {
+        this.clientOrderID = clientOrderID;
+        this.size = size;
+        this.clientId = clientId;
+        this.instrument = instrument;
+        fills = new ArrayList<>();
+        slices = new ArrayList<>();
+    }
 
     public int sliceSizes() {
         int totalSizeOfSlices = 0;
@@ -20,7 +41,7 @@ public class Order implements Serializable {
     }
 
     public int newSlice(int sliceSize) {
-        slices.add(new Order(id, ClientOrderID, instrument, sliceSize));
+        slices.add(new Order(clientId, clientOrderID, instrument, sliceSize));
         return slices.size() - 1;
     }
 
@@ -39,12 +60,6 @@ public class Order implements Serializable {
         return size - sizeFilled();
     }
 
-    int clientid;
-    public Instrument instrument;
-    public double initialMarketPrice;
-    ArrayList<Order> slices;
-    ArrayList<Fill> fills;
-    char OrdStatus = 'A'; //OrdStatus is Fix 39, 'A' is 'Pending New'
 
     //Status state;
     float price() {
@@ -129,14 +144,7 @@ public class Order implements Serializable {
         //state=cancelled
     }
 
-    public Order(int clientId, int ClientOrderID, Instrument instrument, int size) {
-        this.ClientOrderID = ClientOrderID;
-        this.size = size;
-        this.clientid = clientId;
-        this.instrument = instrument;
-        fills = new ArrayList<Fill>();
-        slices = new ArrayList<Order>();
-    }
+
 }
 
 class Basket {

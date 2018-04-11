@@ -66,13 +66,13 @@ public class SampleClient extends Mock implements Client {
     @Override
     public void fullyFilled(Order order) {
         Mock.show("" + order);
-        OUTGOING_ORDERS.remove(order.ClientOrderID);
+        OUTGOING_ORDERS.remove(order.clientOrderID);
     }
 
     @Override
     public void cancelled(Order order) {
         Mock.show("" + order);
-        OUTGOING_ORDERS.remove(order.ClientOrderID);
+        OUTGOING_ORDERS.remove(order.clientOrderID);
     }
 
 
