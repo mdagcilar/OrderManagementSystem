@@ -31,13 +31,9 @@ public class SampleClient extends Mock implements Client {
     }
 
     @Override
-    public int sendOrder(Object par0) throws IOException {
-        int size = RANDOM_NUM_GENERATOR.nextInt(5000);
-        int instrumentID = RANDOM_NUM_GENERATOR.nextInt(3);
-        Instrument instrument = INSTRUMENTS[instrumentID];
-        NewOrderSingle newOrderSingle = new NewOrderSingle(size, instrumentID, instrument);
+    public int sendOrder(NewOrderSingle newOrderSingle) throws IOException {
 
-        Mock.show("sendOrder: id=" + id + " size=" + size + " instrument=" + instrument.toString());
+        Mock.show("sendOrder: id=" + id + " size=" + newOrderSingle.getSize() + " instrument=" + newOrderSingle.getInstrument().toString());
         OUTGOING_ORDERS.put(id, newOrderSingle);
         if (omConn.isConnected()) {
             ObjectOutputStream objectOutputStream = new ObjectOutputStream(omConn.getOutputStream());
@@ -89,7 +85,7 @@ public class SampleClient extends Mock implements Client {
                     String fix = (String) objectInputStream.readObject();
                     System.out.println(Thread.currentThread().getName() + " received fix message: " + fix);
                     String[] fixTags = fix.split(";");
-                    int OrderId = -1;
+                    int orderId = -1;
                     char MsgType;
 
                     //String[][] fixTagsValues=new String[fixTags.length][2];
@@ -97,17 +93,19 @@ public class SampleClient extends Mock implements Client {
                         String[] tag_value = fixTags[i].split("=");
                         switch (tag_value[0]) {
                             case "11":
-                                OrderId = Integer.parseInt(tag_value[1]);
+                                orderId = Integer.parseInt(tag_value[1]);
                                 break;
                             case "35":
                                 MsgType = tag_value[1].charAt(0);
                                 if (MsgType == 'A') {
-                                    newOrderSingleAcknowledgement(OrderId);
+                                    newOrderAck(orderId);
                                 }
                                 break;
                             case "39":
-                                //TODO: use ordStatus?
-                                int OrdStatus = tag_value[1].charAt(0);
+                                int orderStatus = tag_value[1].charAt(0);
+                                if(orderStatus == '0') {
+                                    acceptOrderAck(orderId);
+                                }
                                 break;
                         }
                     }
@@ -128,8 +126,14 @@ public class SampleClient extends Mock implements Client {
         }
     }
 
-    void newOrderSingleAcknowledgement(int OrderId) {
-        logger.info(Thread.currentThread().getName() + " called newOrderSingleAcknowledgement, with OrderID: " + OrderId);
+    void newOrderAck(int OrderId) {
+//        logger.info(Thread.currentThread().getName() + " called newOrderAck, with OrderID: " + OrderId);
+        System.out.println((Thread.currentThread().getName() + " called newOrderAck, with OrderID: " + OrderId));
+        //do nothing, as not recording so much state in the NOS class at present
+    }
+    void acceptOrderAck(int OrderId) {
+//        logger.info(Thread.currentThread().getName() + " called newOrderAck, with OrderID: " + OrderId);
+        System.out.println((Thread.currentThread().getName() + " called acceptOrderAck, with OrderID: " + OrderId));
         //do nothing, as not recording so much state in the NOS class at present
     }
 /*listen for connections

@@ -9,21 +9,18 @@ import com.m3c.md.Ref.Instrument;
 public class Order implements Serializable {
 
     private long uniqueOrderID, quantity;
-    private double price;
-
+    private double initialMarketPrice;
+    private char orderStatus = 'A'; //orderStatus is Fix 39, 'A' is 'Pending New'
 
     public ArrayList<Order> slices;
     public ArrayList<Fill> fills;
 
     public int clientId, clientOrderID, size, bestPriceCount;
-    public double initialMarketPrice;
 
     double[] bestPrices;
 
     public Instrument instrument;
     short orderRouter;
-
-    char OrdStatus = 'A'; //OrdStatus is Fix 39, 'A' is 'Pending New'
 
     public Order(int clientId, int clientOrderID, Instrument instrument, int size) {
         this.clientOrderID = clientOrderID;
@@ -32,6 +29,22 @@ public class Order implements Serializable {
         this.instrument = instrument;
         fills = new ArrayList<>();
         slices = new ArrayList<>();
+    }
+
+    public char getOrderStatus() {
+        return orderStatus;
+    }
+
+    public void setOrderStatus(char orderStatus) {
+        this.orderStatus = orderStatus;
+    }
+
+    public double getInitialMarketPrice() {
+        return initialMarketPrice;
+    }
+
+    public void setInitialMarketPrice(double initialMarketPrice) {
+        this.initialMarketPrice = initialMarketPrice;
     }
 
     public int sliceSizes() {
@@ -74,9 +87,9 @@ public class Order implements Serializable {
     void createFill(int size, double price) {
         fills.add(new Fill(size, price));
         if (sizeRemaining() == 0) {
-            OrdStatus = '2';
+            orderStatus = '2';
         } else {
-            OrdStatus = '1';
+            orderStatus = '1';
         }
     }
 

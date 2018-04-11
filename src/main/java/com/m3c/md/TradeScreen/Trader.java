@@ -34,10 +34,11 @@ public class Trader extends Thread implements TradeScreen {
 
             //objectInputStream=new ObjectInputStream( omConn.getInputStream());
             InputStream inputStream = omConn.getInputStream(); //if i try to create an objectinputstream before we have data it will block
+
             while (true) {
                 if (0 < inputStream.available()) {
-                    objectInputStream = new ObjectInputStream(inputStream);  //TODO check if we need to create each time. this will block if no data, but maybe we can still try to create it once instead of repeatedly
-
+                    // TODO: find a way to not create the object everytime
+                    objectInputStream = new ObjectInputStream(inputStream);
                     // stored orderID and Order objects in variables, opposed to calling each time
                     api method = (api) objectInputStream.readObject();
                     int orderID = objectInputStream.readInt();
@@ -103,6 +104,8 @@ public class Trader extends Thread implements TradeScreen {
         Thread.sleep(2134);
 
         //TODO: Send price to the OutputStream. And remove slice from price()
-        sliceOrder(id, orders.get(id).sizeRemaining() / 2);
+        // either
+         sliceOrder(id, orders.get(id).sizeRemaining() / 2);
+        // or
     }
 }

@@ -5,13 +5,25 @@ import java.io.Serializable;
 import com.m3c.md.Ref.Instrument;
 
 public class NewOrderSingle implements Serializable {
-    public int size;
-    public float price;
-    public Instrument instrument;
+    private int size;
+    private double price;
+    private Instrument instrument;
 
-    public NewOrderSingle(int size, float price, Instrument instrument) {
+    public NewOrderSingle(int size, double price, Instrument instrument) {
         this.size = size;
         this.price = price;
         this.instrument = instrument;
+    }
+
+    public int getSize() {
+        return size;
+    }
+
+    public double getPrice() {
+        return price;
+    }
+
+    public Instrument getInstrument() {
+        return instrument;
     }
 }

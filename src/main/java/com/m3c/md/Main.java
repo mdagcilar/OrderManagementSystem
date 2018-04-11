@@ -2,14 +2,18 @@ package com.m3c.md;
 
 import com.m3c.md.LiveMarketData.LiveMarketData;
 import com.m3c.md.LiveMarketData.SampleLiveMarketData;
+import com.m3c.md.OrderClient.NewOrderSingle;
 import com.m3c.md.OrderClient.SampleClient;
 import com.m3c.md.OrderManager.OrderManager;
 import com.m3c.md.OrderRouter.SampleRouter;
+import com.m3c.md.Ref.Instrument;
+import com.m3c.md.Ref.Ric;
 import com.m3c.md.TradeScreen.Trader;
 import org.apache.log4j.PropertyConfigurator;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -56,16 +60,14 @@ class MockClient extends Thread {
     public void run() {
         try {
             SampleClient sampleClient = new SampleClient(port);
-            if (port == 2000) {
-                //TODO why does this take an arg?
-                sampleClient.sendOrder(null);
-                //int id = sampleClient.sendOrder(null);
-                //TODO client.sendCancel(id);
-                sampleClient.messageHandler();
-            } else {
-                sampleClient.sendOrder(null);
-                sampleClient.messageHandler();
-            }
+
+            NewOrderSingle newOrderSingle = new NewOrderSingle(500, 1000, new Instrument(new Ric("VOD.L")));
+
+            sampleClient.sendOrder(newOrderSingle);
+            //int id = sampleClient.sendOrder(null);
+            //TODO client.sendCancel(id);
+            sampleClient.messageHandler();
+
         } catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();

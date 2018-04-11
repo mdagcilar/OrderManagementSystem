@@ -6,7 +6,7 @@ import com.m3c.md.OrderManager.Order;
 
 public interface Client{
 	//Outgoing messages
-	int sendOrder(Object object)throws IOException;
+	int sendOrder(NewOrderSingle newOrderSingle)throws IOException;
 	void sendCancel(int id);
 	
 	//Incoming messages

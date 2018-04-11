@@ -116,8 +116,8 @@ public class OrderManager {
                 String method = (String) objectInputStream.readObject();
                 int orderID = objectInputStream.readInt();
 
-                logger.info(Thread.currentThread().getName() + " calling " + method + ", with OrderID: " + orderID);
-
+//                logger.info(Thread.currentThread().getName() + " calling " + method + ", with OrderID: " + orderID);
+                System.out.println((Thread.currentThread().getName() + " calling " + method + ", with OrderID: " + orderID));
                 switch (method) {
                     case "acceptOrder":
                         acceptOrder(orderID);
@@ -150,7 +150,7 @@ public class OrderManager {
 
     private void newOrder(int clientId, int clientOrderId, NewOrderSingle newOrderSingle) throws IOException {
 
-        orders.put(orderID, new Order(clientId, clientOrderId, newOrderSingle.instrument, newOrderSingle.size));
+        orders.put(orderID, new Order(clientId, clientOrderId, newOrderSingle.getInstrument(), newOrderSingle.getSize()));
 
         //send a message to the client with 39=A; //OrdStatus is Fix 39, 'A' is 'Pending New'
         ObjectOutputStream objectOutputStream = new ObjectOutputStream(clients[clientId].getOutputStream());
@@ -174,16 +174,17 @@ public class OrderManager {
 
     public void acceptOrder(int id) throws IOException {
         Order order = orders.get(id);
-        if (order.OrdStatus != 'A') { //Pending New
+        if (order.getOrderStatus() != 'A') { //Pending New
             logger.error("Error accepting order that has already been accepted");
             return;
         }
-        order.OrdStatus = '0'; //New
+        //accept order change status to 0 and Message Type to 0
+        order.setOrderStatus('0'); //Not Pending new order
 
         ObjectOutputStream objectOutputStream = new ObjectOutputStream(clients[order.clientId].getOutputStream());
         //newOrderSingle acknowledgement
         //ClOrdId is 11=
-        objectOutputStream.writeObject("11=" + order.clientOrderID + ";35=A;39=0");
+        objectOutputStream.writeObject("11=" + order.clientOrderID + ";35=0;39=" + order.getOrderStatus());
         objectOutputStream.flush();
 
         price(id, order);
@@ -216,7 +217,7 @@ public class OrderManager {
 
             if (entry.getKey().intValue() == orderID) continue;
             Order matchingOrder = entry.getValue();
-            if (!(matchingOrder.instrument.equals(order.instrument) && matchingOrder.initialMarketPrice == order.initialMarketPrice))
+            if (!(matchingOrder.instrument.equals(order.instrument) && matchingOrder.getInitialMarketPrice() == order.getInitialMarketPrice()))
                 continue;
             //TODO add support here and in Order for limit orders
             int sizeBefore = order.sizeRemaining();
