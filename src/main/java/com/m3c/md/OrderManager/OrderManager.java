@@ -5,8 +5,6 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.net.SocketException;
-import java.util.Arrays;
 import java.util.HashMap;
 //import java.util.IntSummaryStatistics;
 import java.util.Map;
@@ -22,38 +20,23 @@ public class OrderManager {
     private static org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger(Main.class);
 
     private static LiveMarketData liveMarketData;
-    private HashMap<Integer, Order> orders = new HashMap<Integer, Order>(); //debugger will do this line as it gives state to the object
+    private Map<Integer, Order> orders = new HashMap<>();   //debugger will do this line as it gives state to the object
     //currently recording the number of new order messages we get. TODO why? use it for more?
-    private int id = 0; //debugger will do this line as it gives state to the object
+    private int orderID = 0; //debugger will do this line as it gives state to the object
     private Socket[] orderRouters; //debugger will skip these lines as they dissapear at compile time into 'the object'/stack
     private Socket[] clients;
     private Socket trader;
 
-    private Socket connect(InetSocketAddress location) throws InterruptedException {
-        //TODO: connected is always false
-        boolean connected = false;
-        int tryCounter = 0;
-        while (!connected && tryCounter < 600) {
-            try {
-                Socket socket = new Socket(location.getHostName(), location.getPort());
-                socket.setKeepAlive(true);
-                logger.info("Socket connection successful - " + location);
-                return socket;
-            } catch (IOException e) {
-                Thread.sleep(1000);
-                tryCounter++;
-            }
-        }
-        logger.error("Failed to connect to " + location.toString());
-        return null;
-    }
 
     //@param args the command line arguments
-    public OrderManager(InetSocketAddress[] orderRoutersAddresses, InetSocketAddress[] clientsInetAddresses, InetSocketAddress traderInetAddress,
+    public OrderManager(InetSocketAddress[] orderRoutersAddresses,
+                        InetSocketAddress[] clientsInetAddresses,
+                        InetSocketAddress traderInetAddress,
                         LiveMarketData liveMarketData) throws IOException, ClassNotFoundException, InterruptedException {
         this.liveMarketData = liveMarketData;
-        this.trader = connect(traderInetAddress);
 
+
+        this.trader = connect(traderInetAddress);
 
         //for the router connections, copy the input array into our object field.
         //but rather than taking the address we create a socket+ephemeral port and connect it to the address
@@ -68,6 +51,8 @@ public class OrderManager {
             this.clients[j] = connect(clientsInetAddresses[j]);
         }
 
+        ObjectInputStream objectInputStream;
+
         //main loop, wait for a message, then process it
         while (true) {
             //TODO this is pretty cpu intensive, use a more modern polling/interrupt/select approach
@@ -77,14 +62,18 @@ public class OrderManager {
 
                 // if no socket available, create new stream
                 if (0 < client.getInputStream().available()) { //if we have part of a message ready to read, assuming this doesn't fragment messages
-                    ObjectInputStream objectInputStream = new ObjectInputStream(client.getInputStream()); //create an object inputstream, this is a pretty stupid way of doing it, why not create it once rather than every time around the loop
+                    objectInputStream = new ObjectInputStream(client.getInputStream()); //create an object inputstream, this is a pretty stupid way of doing it, why not create it once rather than every time around the loop
+
                     String method = (String) objectInputStream.readObject();
-                    System.out.println(Thread.currentThread().getName() + " calling " + method);
+                    int orderID = objectInputStream.readInt();
+                    NewOrderSingle newOrderSingle = (NewOrderSingle) objectInputStream.readObject();
+
+                    System.out.println(Thread.currentThread().getName() + " calling " + method + ", with OrderID: " + orderID);
 
                     switch (method) { //determine the type of message and process it
                         //call the newOrder message with the clientId and the message (clientMessageId,NewOrderSingle)
                         case "newOrderSingle":
-                            newOrder(clientIndex, objectInputStream.readInt(), (NewOrderSingle) objectInputStream.readObject());
+                            newOrder(clientIndex, orderID, newOrderSingle);
                             break;
                         //TODO create a default case which errors with "Unknown message type"+...
                     }
@@ -95,7 +84,7 @@ public class OrderManager {
                 Socket router = orderRouters[routerIndex];
 
                 if (0 < router.getInputStream().available()) { //if we have part of a message ready to read, assuming this doesn't fragment messages
-                    ObjectInputStream objectInputStream = new ObjectInputStream(router.getInputStream()); //create an object inputstream, this is a pretty stupid way of doing it, why not create it once rather than every time around the loop
+                    objectInputStream = new ObjectInputStream(router.getInputStream()); //create an object inputstream, this is a pretty stupid way of doing it, why not create it once rather than every time around the loop
                     String method = (String) objectInputStream.readObject();
                     System.out.println(Thread.currentThread().getName() + " calling " + method);
                     switch (method) { //determine the type of message and process it
@@ -116,32 +105,58 @@ public class OrderManager {
             }
 
             if (0 < trader.getInputStream().available()) {
-                ObjectInputStream objectInputStream = new ObjectInputStream(this.trader.getInputStream());
+                objectInputStream = new ObjectInputStream(this.trader.getInputStream());
+
+                // stored orderID and Order objects in variables, opposed to calling each time
                 String method = (String) objectInputStream.readObject();
-                System.out.println(Thread.currentThread().getName() + " calling " + method);
+                int orderID = objectInputStream.readInt();
+
+                logger.info(Thread.currentThread().getName() + " calling " + method + ", with OrderID: " + orderID);
+
                 switch (method) {
                     case "acceptOrder":
-                        acceptOrder(objectInputStream.readInt());
+                        acceptOrder(orderID);
                         break;
                     case "sliceOrder":
-                        sliceOrder(objectInputStream.readInt(), objectInputStream.readInt());
+                        sliceOrder(orderID, objectInputStream.readInt());
                 }
             }
         }
     }
 
-    private void newOrder(int clientId, int clientOrderId, NewOrderSingle nos) throws IOException {
-        orders.put(id, new Order(clientId, clientOrderId, nos.instrument, nos.size));
+    private Socket connect(InetSocketAddress location) throws InterruptedException {
+        //TODO: connected is always false
+        boolean connected = false;
+        int tryCounter = 0;
+        while (!connected && tryCounter < 600) {
+            try {
+                Socket socket = new Socket(location.getHostName(), location.getPort());
+                socket.setKeepAlive(true);
+                logger.info("Socket connection successful - " + location);
+                return socket;
+            } catch (IOException e) {
+                Thread.sleep(1000);
+                tryCounter++;
+            }
+        }
+        logger.error("Failed to connect to " + location.toString());
+        return null;
+    }
+
+    private void newOrder(int clientId, int clientOrderId, NewOrderSingle newOrderSingle) throws IOException {
+
+        orders.put(orderID, new Order(clientId, clientOrderId, newOrderSingle.instrument, newOrderSingle.size));
+
         //send a message to the client with 39=A; //OrdStatus is Fix 39, 'A' is 'Pending New'
         ObjectOutputStream objectOutputStream = new ObjectOutputStream(clients[clientId].getOutputStream());
         //newOrderSingle acknowledgement
         //ClOrdId is 11=
         objectOutputStream.writeObject("11=" + clientOrderId + ";35=A;39=A;");
         objectOutputStream.flush();
-        sendOrderToTrader(id, orders.get(id), TradeScreen.api.newOrder);
+        sendOrderToTrader(orderID, orders.get(orderID), TradeScreen.api.newOrder);
         //send the new order to the trading screen
         //don't do anything else with the order, as we are simulating high touch orders and so need to wait for the trader to accept the order
-        id++;
+        orderID++;
     }
 
     private void sendOrderToTrader(int id, Order order, Object method) throws IOException {

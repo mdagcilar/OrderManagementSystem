@@ -6,11 +6,10 @@ import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 
 import com.m3c.md.Main;
-import com.m3c.md.OrderClient.Client;
-import com.m3c.md.OrderClient.NewOrderSingle;
 import com.m3c.md.OrderManager.Order;
 import com.m3c.md.Ref.Instrument;
 import com.m3c.md.Ref.Ric;
@@ -21,7 +20,7 @@ public class SampleClient extends Mock implements Client {
 
     private static final Random RANDOM_NUM_GENERATOR = new Random();
     private static final Instrument[] INSTRUMENTS = {new Instrument(new Ric("VOD.L")), new Instrument(new Ric("BP.L")), new Instrument(new Ric("BT.L"))};
-    private static final HashMap OUT_QUEUE = new HashMap(); //queue for outgoing orders
+    private static final Map<Integer, NewOrderSingle> OUTGOING_ORDERS = new HashMap(); //queue for outgoing orders
     private int id = 0; //message id number
     private Socket omConn; //connection to order manager
 
@@ -35,11 +34,11 @@ public class SampleClient extends Mock implements Client {
     public int sendOrder(Object par0) throws IOException {
         int size = RANDOM_NUM_GENERATOR.nextInt(5000);
         int instrumentID = RANDOM_NUM_GENERATOR.nextInt(3);
-        Instrument instrument = INSTRUMENTS[RANDOM_NUM_GENERATOR.nextInt(INSTRUMENTS.length)];
+        Instrument instrument = INSTRUMENTS[instrumentID];
         NewOrderSingle newOrderSingle = new NewOrderSingle(size, instrumentID, instrument);
 
-        Mock.show("sendOrder: id=" + id + " size=" + size + " instrument=" + INSTRUMENTS[instrumentID].toString());
-        OUT_QUEUE.put(id, newOrderSingle);
+        Mock.show("sendOrder: id=" + id + " size=" + size + " instrument=" + instrument.toString());
+        OUTGOING_ORDERS.put(id, newOrderSingle);
         if (omConn.isConnected()) {
             ObjectOutputStream objectOutputStream = new ObjectOutputStream(omConn.getOutputStream());
             objectOutputStream.writeObject("newOrderSingle");
@@ -67,18 +66,15 @@ public class SampleClient extends Mock implements Client {
     @Override
     public void fullyFilled(Order order) {
         Mock.show("" + order);
-        OUT_QUEUE.remove(order.ClientOrderID);
+        OUTGOING_ORDERS.remove(order.ClientOrderID);
     }
 
     @Override
     public void cancelled(Order order) {
         Mock.show("" + order);
-        OUT_QUEUE.remove(order.ClientOrderID);
+        OUTGOING_ORDERS.remove(order.ClientOrderID);
     }
 
-    enum methods {newOrderSingleAcknowledgement, dontKnow}
-
-    ;
 
     @Override
     public void messageHandler() {
@@ -89,13 +85,13 @@ public class SampleClient extends Mock implements Client {
                 //objectInputStream.wait(); //this throws an exception!!
                 while (0 < omConn.getInputStream().available()) {
                     objectInputStream = new ObjectInputStream(omConn.getInputStream());
+
                     String fix = (String) objectInputStream.readObject();
                     System.out.println(Thread.currentThread().getName() + " received fix message: " + fix);
                     String[] fixTags = fix.split(";");
                     int OrderId = -1;
                     char MsgType;
 
-                    methods whatToDo = methods.dontKnow;
                     //String[][] fixTagsValues=new String[fixTags.length][2];
                     for (int i = 0; i < fixTags.length; i++) {
                         String[] tag_value = fixTags[i].split("=");
@@ -105,18 +101,17 @@ public class SampleClient extends Mock implements Client {
                                 break;
                             case "35":
                                 MsgType = tag_value[1].charAt(0);
-                                if (MsgType == 'A') whatToDo = methods.newOrderSingleAcknowledgement;
+                                if (MsgType == 'A') {
+                                    newOrderSingleAcknowledgement(OrderId);
+                                }
                                 break;
                             case "39":
+                                //TODO: use ordStatus?
                                 int OrdStatus = tag_value[1].charAt(0);
                                 break;
                         }
                     }
-                    switch (whatToDo) {
-                        case newOrderSingleAcknowledgement:
-                            newOrderSingleAcknowledgement(OrderId);
-                    }
-					
+
 					/*message=connection.getMessage();
 					char type;
 					switch(type){

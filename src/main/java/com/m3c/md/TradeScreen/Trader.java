@@ -17,28 +17,29 @@ public class Trader extends Thread implements TradeScreen {
     private Map<Integer, Order> orders = new HashMap<>();
     private static Socket omConn;
     private int port;
+    private ObjectOutputStream objectOutputStream;
 
     public Trader(String name, int port) {
         this.setName(name);
         this.port = port;
     }
 
-    ObjectInputStream objectInputStream;
-    ObjectOutputStream objectOutputStream;
 
     public void run() {
+        ObjectInputStream objectInputStream;
+
         //OM will connect to us
         try {
-            omConn = ServerSocketFactory.getDefault().createServerSocket(port). accept();
+            omConn = ServerSocketFactory.getDefault().createServerSocket(port).accept();
 
             //objectInputStream=new ObjectInputStream( omConn.getInputStream());
             InputStream inputStream = omConn.getInputStream(); //if i try to create an objectinputstream before we have data it will block
             while (true) {
                 if (0 < inputStream.available()) {
                     objectInputStream = new ObjectInputStream(inputStream);  //TODO check if we need to create each time. this will block if no data, but maybe we can still try to create it once instead of repeatedly
-                    api method = (api) objectInputStream.readObject();
 
-                    // stored orderID and Order objects in variables, opposed to calling each time. And also so we can use the variables in prints
+                    // stored orderID and Order objects in variables, opposed to calling each time
+                    api method = (api) objectInputStream.readObject();
                     int orderID = objectInputStream.readInt();
                     Order order = (Order) objectInputStream.readObject();
 
@@ -84,6 +85,7 @@ public class Trader extends Thread implements TradeScreen {
         objectOutputStream.writeObject("acceptOrder");
         objectOutputStream.writeInt(id);
         objectOutputStream.flush();
+        //TODO: introduce a threshold to slice an order.
     }
 
     @Override
@@ -99,6 +101,8 @@ public class Trader extends Thread implements TradeScreen {
     public void price(int id, Order o) throws InterruptedException, IOException {
         //TODO should update the trade screen
         Thread.sleep(2134);
+
+        //TODO: Send price to the OutputStream. And remove slice from price()
         sliceOrder(id, orders.get(id).sizeRemaining() / 2);
     }
 }

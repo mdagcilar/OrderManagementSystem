@@ -5,140 +5,151 @@ import java.util.ArrayList;
 
 import com.m3c.md.Ref.Instrument;
 
-public class Order implements Serializable{
+public class Order implements Serializable {
     public int id; //TODO these should all be longs
     short orderRouter;
     public int ClientOrderID; //TODO refactor to lowercase C
     int size;
-    double[]bestPrices;
+    double[] bestPrices;
     int bestPriceCount;
-    public int sliceSizes(){
-        int totalSizeOfSlices=0;
-        for(Order c:slices)totalSizeOfSlices+=c.size;
+
+    public int sliceSizes() {
+        int totalSizeOfSlices = 0;
+        for (Order c : slices) totalSizeOfSlices += c.size;
         return totalSizeOfSlices;
     }
-    public int newSlice(int sliceSize){
-        slices.add(new Order(id,ClientOrderID,instrument,sliceSize));
-        return slices.size()-1;
+
+    public int newSlice(int sliceSize) {
+        slices.add(new Order(id, ClientOrderID, instrument, sliceSize));
+        return slices.size() - 1;
     }
-    public int sizeFilled(){
-        int filledSoFar=0;
-        for(Fill f:fills){
-            filledSoFar+=f.size;
+
+    public int sizeFilled() {
+        int filledSoFar = 0;
+        for (Fill f : fills) {
+            filledSoFar += f.size;
         }
-        for(Order c:slices){
-            filledSoFar+=c.sizeFilled();
+        for (Order c : slices) {
+            filledSoFar += c.sizeFilled();
         }
         return filledSoFar;
     }
-    public int sizeRemaining(){
-        return size-sizeFilled();
+
+    public int sizeRemaining() {
+        return size - sizeFilled();
     }
+
     int clientid;
     public Instrument instrument;
     public double initialMarketPrice;
-    ArrayList<Order>slices;
-    ArrayList<Fill>fills;
-    char OrdStatus='A'; //OrdStatus is Fix 39, 'A' is 'Pending New'
+    ArrayList<Order> slices;
+    ArrayList<Fill> fills;
+    char OrdStatus = 'A'; //OrdStatus is Fix 39, 'A' is 'Pending New'
+
     //Status state;
-    float price(){
+    float price() {
         //TODO this is buggy as it doesn't take account of slices. Let them fix it
-        float sum=0;
-        for(Fill fill:fills){
-            sum+=fill.price;
+        float sum = 0;
+        for (Fill fill : fills) {
+            sum += fill.price;
         }
-        return sum/fills.size();
+        return sum / fills.size();
     }
-    void createFill(int size,double price){
-        fills.add(new Fill(size,price));
-        if(sizeRemaining()==0){
-            OrdStatus='2';
-        }else{
-            OrdStatus='1';
+
+    void createFill(int size, double price) {
+        fills.add(new Fill(size, price));
+        if (sizeRemaining() == 0) {
+            OrdStatus = '2';
+        } else {
+            OrdStatus = '1';
         }
     }
-    void cross(Order matchingOrder){
+
+    void cross(Order matchingOrder) {
         //pair slices first and then parent
-        for(Order slice:slices){
-            if(slice.sizeRemaining()==0)continue;
+        for (Order slice : slices) {
+            if (slice.sizeRemaining() == 0) continue;
             //TODO could optimise this to not start at the beginning every time
-            for(Order matchingSlice:matchingOrder.slices){
-                int matchingSize=matchingSlice.sizeRemaining();
-                if(matchingSize==0)continue;
-                int remainingSize=slice.sizeRemaining();
-                if(remainingSize<=matchingSize){
-                    slice.createFill(remainingSize,initialMarketPrice);
+            for (Order matchingSlice : matchingOrder.slices) {
+                int matchingSize = matchingSlice.sizeRemaining();
+                if (matchingSize == 0) continue;
+                int remainingSize = slice.sizeRemaining();
+                if (remainingSize <= matchingSize) {
+                    slice.createFill(remainingSize, initialMarketPrice);
                     matchingSlice.createFill(remainingSize, initialMarketPrice);
                     break;
                 }
                 //sze>msze
-                slice.createFill(matchingSize,initialMarketPrice);
+                slice.createFill(matchingSize, initialMarketPrice);
                 matchingSlice.createFill(matchingSize, initialMarketPrice);
             }
-            int remainingSize=slice.sizeRemaining();
-            int mParent=matchingOrder.sizeRemaining()-matchingOrder.sliceSizes();
-            if(remainingSize>0 && mParent>0){
-                if(remainingSize>=mParent){
-                    slice.createFill(remainingSize,initialMarketPrice);
+            int remainingSize = slice.sizeRemaining();
+            int mParent = matchingOrder.sizeRemaining() - matchingOrder.sliceSizes();
+            if (remainingSize > 0 && mParent > 0) {
+                if (remainingSize >= mParent) {
+                    slice.createFill(remainingSize, initialMarketPrice);
                     matchingOrder.createFill(remainingSize, initialMarketPrice);
-                }else{
-                    slice.createFill(mParent,initialMarketPrice);
+                } else {
+                    slice.createFill(mParent, initialMarketPrice);
                     matchingOrder.createFill(mParent, initialMarketPrice);
                 }
             }
             //no point continuing if we didn't fill this slice, as we must already have fully filled the matchingOrder
-            if(slice.sizeRemaining()>0)break;
+            if (slice.sizeRemaining() > 0) break;
         }
-        if(sizeRemaining()>0){
-            for(Order matchingSlice:matchingOrder.slices){
-                int matchingSize=matchingSlice.sizeRemaining();
-                if(matchingSize==0)continue;
-                int remainingSize=sizeRemaining();
-                if(remainingSize<=matchingSize){
-                    createFill(remainingSize,initialMarketPrice);
+        if (sizeRemaining() > 0) {
+            for (Order matchingSlice : matchingOrder.slices) {
+                int matchingSize = matchingSlice.sizeRemaining();
+                if (matchingSize == 0) continue;
+                int remainingSize = sizeRemaining();
+                if (remainingSize <= matchingSize) {
+                    createFill(remainingSize, initialMarketPrice);
                     matchingSlice.createFill(remainingSize, initialMarketPrice);
                     break;
                 }
                 //sze>msze
-                createFill(matchingSize,initialMarketPrice);
+                createFill(matchingSize, initialMarketPrice);
                 matchingSlice.createFill(matchingSize, initialMarketPrice);
             }
-            int remainingSize=sizeRemaining();
-            int mParent=matchingOrder.sizeRemaining()-matchingOrder.sliceSizes();
-            if(remainingSize>0 && mParent>0){
-                if(remainingSize>=mParent){
-                    createFill(remainingSize,initialMarketPrice);
+            int remainingSize = sizeRemaining();
+            int mParent = matchingOrder.sizeRemaining() - matchingOrder.sliceSizes();
+            if (remainingSize > 0 && mParent > 0) {
+                if (remainingSize >= mParent) {
+                    createFill(remainingSize, initialMarketPrice);
                     matchingOrder.createFill(remainingSize, initialMarketPrice);
-                }else{
-                    createFill(mParent,initialMarketPrice);
+                } else {
+                    createFill(mParent, initialMarketPrice);
                     matchingOrder.createFill(mParent, initialMarketPrice);
                 }
             }
         }
     }
-    void cancel(){
+
+    void cancel() {
         //state=cancelled
     }
-    public Order(int clientId, int ClientOrderID, Instrument instrument, int size){
-        this.ClientOrderID=ClientOrderID;
-        this.size=size;
-        this.clientid=clientId;
-        this.instrument=instrument;
-        fills=new ArrayList<Fill>();
-        slices=new ArrayList<Order>();
+
+    public Order(int clientId, int ClientOrderID, Instrument instrument, int size) {
+        this.ClientOrderID = ClientOrderID;
+        this.size = size;
+        this.clientid = clientId;
+        this.instrument = instrument;
+        fills = new ArrayList<Fill>();
+        slices = new ArrayList<Order>();
     }
 }
 
-class Basket{
+class Basket {
     Order[] orders;
 }
 
-class Fill implements Serializable{
+class Fill implements Serializable {
     //long id;
     int size;
     double price;
-    Fill(int size,double price){
-        this.size=size;
-        this.price=price;
+
+    Fill(int size, double price) {
+        this.size = size;
+        this.price = price;
     }
 }
