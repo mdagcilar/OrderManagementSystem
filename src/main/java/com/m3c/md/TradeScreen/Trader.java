@@ -75,8 +75,16 @@ public class Trader extends Thread implements TradeScreen {
     public void newOrder(int id, Order order) throws IOException, InterruptedException {
         //TODO the order should go in a visual grid, but not needed for test purposes
         Thread.sleep(2134);
-        orders.put(id, order);
-        acceptOrder(id);
+
+        // Current threshold for spiting an order is 100,000.
+        if (order.getQuantity() > 100000) {
+            // slice order
+            sliceOrder(id, orders.get(id).getSizeRemaining() / 2);
+        } else {
+            // just accept Order as a single Order.
+            orders.put(id, order);
+            acceptOrder(id);
+        }
     }
 
     @Override
@@ -85,7 +93,17 @@ public class Trader extends Thread implements TradeScreen {
         objectOutputStream.writeObject("acceptOrder");
         objectOutputStream.writeInt(id);
         objectOutputStream.flush();
-        //TODO: introduce a threshold to slice an order.
+    }
+
+    //TODO should update the trade screen
+    //TODO: Send price to the OutputStream
+    @Override
+    public void price(int id, Order order) throws InterruptedException, IOException {
+        Thread.sleep(2134);
+
+        // if order.initialMarketPrice < Client.Max. Then Accept the price
+
+        sliceOrder(id, orders.get(id).getSizeRemaining() / 2);
     }
 
     @Override
@@ -95,16 +113,5 @@ public class Trader extends Thread implements TradeScreen {
         objectOutputStream.writeInt(id);
         objectOutputStream.writeInt(sliceSize);
         objectOutputStream.flush();
-    }
-
-    @Override
-    public void price(int id, Order o) throws InterruptedException, IOException {
-        //TODO should update the trade screen
-        Thread.sleep(2134);
-
-        //TODO: Send price to the OutputStream. And remove slice from price()
-        // either
-        sliceOrder(id, orders.get(id).getSizeRemaining() / 2);
-        // or
     }
 }
