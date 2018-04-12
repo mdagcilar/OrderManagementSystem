@@ -56,6 +56,10 @@ public class Trader extends Thread implements TradeScreen {
 //                            objectInputStream.readObject();
                             break; //TODO
                         case fill:
+                            // TODO: send ack to user
+
+                            // TODO: write to the database
+
 //                            objectInputStream.readInt();
 //                            objectInputStream.readObject();
                             break; //TODO
@@ -89,6 +93,13 @@ public class Trader extends Thread implements TradeScreen {
 
     @Override
     public void acceptOrder(int id) throws IOException {
+        objectOutputStream = new ObjectOutputStream(omConn.getOutputStream());
+        objectOutputStream.writeObject("acceptOrder");
+        objectOutputStream.writeInt(id);
+        objectOutputStream.flush();
+    }
+
+    private void completeOrder(int id) throws IOException {
         objectOutputStream = new ObjectOutputStream(omConn.getOutputStream());
         objectOutputStream.writeObject("acceptOrder");
         objectOutputStream.writeInt(id);

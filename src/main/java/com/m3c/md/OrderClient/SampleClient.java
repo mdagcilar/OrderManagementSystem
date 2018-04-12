@@ -136,6 +136,12 @@ public class SampleClient extends Mock implements Client {
         System.out.println((Thread.currentThread().getName() + " called acceptOrderAck, with OrderID: " + OrderId));
         //do nothing, as not recording so much state in the NOS class at present
     }
+
+    void completeOrderAck(int OrderId) {
+//        logger.info(Thread.currentThread().getName() + " called newOrderAck, with OrderID: " + OrderId);
+        System.out.println((Thread.currentThread().getName() + " called completeOrderAck, with OrderID: " + OrderId));
+        //do nothing, as not recording so much state in the NOS class at present
+    }
 /*listen for connections
 once order manager has connected, then send and cancel orders randomly
 listen for messages from order manager and print them to stdout.*/

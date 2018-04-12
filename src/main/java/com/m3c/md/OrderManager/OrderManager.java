@@ -148,6 +148,14 @@ public class OrderManager {
         return null;
     }
 
+    private void sendOrderToTrader(int id, Order order, Object method) throws IOException {
+        ObjectOutputStream objectOutputStream = new ObjectOutputStream(trader.getOutputStream());
+        objectOutputStream.writeObject(method);
+        objectOutputStream.writeInt(id);
+        objectOutputStream.writeObject(order);
+        objectOutputStream.flush();
+    }
+
     private void newOrder(int clientId, int clientOrderId, NewOrderSingle newOrderSingle) throws IOException {
 
         orders.put(orderID, new Order(clientId, clientOrderId, newOrderSingle.getInstrument(), newOrderSingle.getSize()));
@@ -164,13 +172,6 @@ public class OrderManager {
         orderID++;
     }
 
-    private void sendOrderToTrader(int id, Order order, Object method) throws IOException {
-        ObjectOutputStream objectOutputStream = new ObjectOutputStream(trader.getOutputStream());
-        objectOutputStream.writeObject(method);
-        objectOutputStream.writeInt(id);
-        objectOutputStream.writeObject(order);
-        objectOutputStream.flush();
-    }
 
     public void acceptOrder(int id) throws IOException {
         Order order = orders.get(id);
@@ -188,6 +189,8 @@ public class OrderManager {
         objectOutputStream.flush();
 
         price(id, order);
+        internalCross(id, order);
+
     }
 
     public void sliceOrder(int id, int sliceSize) throws IOException {
@@ -200,33 +203,32 @@ public class OrderManager {
         }
         int sliceId = order.newSlice(sliceSize);
         Order slice = order.slices.get(sliceId);
+
         internalCross(id, slice);
         int sizeRemaining = order.slices.get(sliceId).getQuantityRemaining();
+
+        // if slice remaining is not satisfied by internalCross, route order outside.
         if (sizeRemaining > 0) {
             routeOrder(id, sliceId, sizeRemaining, slice);
         }
     }
 
-    private void internalCross(int orderID, Order slicedOrder) throws IOException {
+    private void internalCross(int orderID, Order order) throws IOException {
         for (Map.Entry<Integer, Order> entry : orders.entrySet()) {
             // if not the same order
             if (!(entry.getKey() == orderID)) {
                 Order matchingOrder = entry.getValue();
                 // if instrument matches and price is equal or less than client's order
-                if ((matchingOrder.getInstrument().toString().equals(slicedOrder.getInstrument().toString()))
-                        && (matchingOrder.getInitialMarketPrice() <= slicedOrder.getInitialMarketPrice())) {
-                    int sizeBefore = slicedOrder.getQuantityRemaining();
-                    slicedOrder.cross(matchingOrder);
-                    if (sizeBefore != slicedOrder.getQuantityRemaining()) {
-                        sendOrderToTrader(orderID, slicedOrder, TradeScreen.api.cross);
+                if ((matchingOrder.getInstrument().toString().equals(order.getInstrument().toString()))
+                        && (matchingOrder.getInitialMarketPrice() <= order.getInitialMarketPrice())) {
+                    int sizeBefore = order.getQuantityRemaining();
+                    order.cross(matchingOrder);
+                    if (sizeBefore != order.getQuantityRemaining()) {
+                        sendOrderToTrader(orderID, order, TradeScreen.api.cross);
                     }
                 }
             }
         }
-    }
-
-    private void cancelOrder() {
-
     }
 
     private void newFill(int id, int sliceId, int size, double price) throws IOException {
@@ -272,13 +274,17 @@ public class OrderManager {
         objectOutputStream.flush();
     }
 
-    private void sendCancel(Order order, Router orderRouter) {
-        //orderRouter.sendCancel(order);
-        //order.orderRouter.writeObject(order);
-    }
-
     private void price(int id, Order order) throws IOException {
         liveMarketData.setPrice(order);
         sendOrderToTrader(id, order, TradeScreen.api.price);
+    }
+
+    private void cancelOrder() {
+
+    }
+
+    private void sendCancel(Order order, Router orderRouter) {
+        //orderRouter.sendCancel(order);
+        //order.orderRouter.writeObject(order);
     }
 }
