@@ -12,12 +12,11 @@ public class Order implements Serializable {
     private double initialMarketPrice;
     private Instrument instrument;
     private char orderStatus = 'A'; //orderStatus is Fix 39, 'A' is 'Pending New'
+    private int quantity, clientId, clientOrderID;
 
     public ArrayList<Order> slices;
     public ArrayList<Fill> fills;
-
-    private int quantity;
-    public int clientId, clientOrderID, bestPriceCount;
+    public int bestPriceCount;
 
     double[] bestPrices;
 
@@ -35,7 +34,6 @@ public class Order implements Serializable {
     public Instrument getInstrument() {
         return instrument;
     }
-
 
     public char getOrderStatus() {
         return orderStatus;
@@ -55,6 +53,14 @@ public class Order implements Serializable {
 
     public int getQuantity() {
         return quantity;
+    }
+
+    public int getClientId() {
+        return clientId;
+    }
+
+    public int getClientOrderID() {
+        return clientOrderID;
     }
 
     public int getQuantityRemaining() {
@@ -172,8 +178,6 @@ public class Order implements Serializable {
     void cancel() {
         //state=cancelled
     }
-
-
 }
 
 class Basket {

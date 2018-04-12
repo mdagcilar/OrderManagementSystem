@@ -88,22 +88,22 @@ public class OrderManager {
                     objectInputStream = new ObjectInputStream(router.getInputStream()); //create an object inputstream, this is a pretty stupid way of doing it, why not create it once rather than every time around the loop
 
                     String method = (String) objectInputStream.readObject();
-                    int OrderId = objectInputStream.readInt();
-                    int SliceId = objectInputStream.readInt();
+                    int orderId = objectInputStream.readInt();
+                    int sliceId = objectInputStream.readInt();
 
-                    System.out.println(Thread.currentThread().getName() + " calling " + method + ", with OrderID: " + OrderId);
+                    System.out.println(Thread.currentThread().getName() + " calling " + method + ", with OrderID: " + orderId);
 
                     switch (method) { //determine the type of message and process it
                         case "bestPrice":
                             //TODO: define bestPrice() method
-                            Order slice = orders.get(OrderId).slices.get(SliceId);
+                            Order slice = orders.get(orderId).slices.get(sliceId);
                             slice.bestPrices[routerIndex] = objectInputStream.readDouble();
                             slice.bestPriceCount += 1;
                             if (slice.bestPriceCount == slice.bestPrices.length)
-                                reallyRouteOrder(SliceId, slice);
+                                reallyRouteOrder(sliceId, slice);
                             break;
                         case "newFill":
-                            newFill(OrderId, SliceId, objectInputStream.readInt(), objectInputStream.readDouble());
+                            newFill(orderId, sliceId, objectInputStream.readInt(), objectInputStream.readDouble());
                             break;
                     }
                 }
@@ -157,40 +157,38 @@ public class OrderManager {
     }
 
     private void newOrder(int clientId, int clientOrderId, NewOrderSingle newOrderSingle) throws IOException {
-
+        // put the order in the hashmap
         orders.put(orderID, new Order(clientId, clientOrderId, newOrderSingle.getInstrument(), newOrderSingle.getSize()));
 
-        //send a message to the client with 39=A; //OrdStatus is Fix 39, 'A' is 'Pending New'
-        ObjectOutputStream objectOutputStream = new ObjectOutputStream(clients[clientId].getOutputStream());
-        //newOrderSingle acknowledgement
-        //ClOrdId is 11=
-        objectOutputStream.writeObject("11=" + clientOrderId + ";35=A;39=A;");
-        objectOutputStream.flush();
-        sendOrderToTrader(orderID, orders.get(orderID), TradeScreen.api.newOrder);
-        //send the new order to the trading screen
-        //don't do anything else with the order, as we are simulating high touch orders and so need to wait for the trader to accept the order
-        orderID++;
-    }
+        // send newOrderAck to client
+        String message = "11=" + clientOrderId + ";35=A;39=A;";
+        sendMessageToClient(clientId, message);
 
+        sendOrderToTrader(orderID, orders.get(orderID), TradeScreen.api.newOrder);
+        orderID++;  // increase order number
+    }
 
     public void acceptOrder(int id) throws IOException {
         Order order = orders.get(id);
+
         if (order.getOrderStatus() != 'A') { //Pending New
             logger.error("Error accepting order that has already been accepted");
             return;
         }
-        //accept order change status to 0 and Message Type to 0
-        order.setOrderStatus('0'); //Not Pending new order
+        order.setOrderStatus('0'); // Change from new order to accepted order status
 
-        ObjectOutputStream objectOutputStream = new ObjectOutputStream(clients[order.clientId].getOutputStream());
-        //newOrderSingle acknowledgement
-        //ClOrdId is 11=
-        objectOutputStream.writeObject("11=" + order.clientOrderID + ";35=0;39=" + order.getOrderStatus());
-        objectOutputStream.flush();
+        // send acceptOrderAck to clients
+        String message = "11=" + order.getClientOrderID() + ";35=0;39=" + order.getOrderStatus();
+        sendMessageToClient(order.getClientId(), message);
 
         price(id, order);
-        internalCross(id, order);
+    }
 
+    // Sends a message to the Client
+    private void sendMessageToClient(int clientId, String message) throws IOException {
+        ObjectOutputStream objectOutputStream = new ObjectOutputStream(clients[clientId].getOutputStream());
+        objectOutputStream.writeObject(message);
+        objectOutputStream.flush();
     }
 
     public void sliceOrder(int id, int sliceSize) throws IOException {
@@ -198,7 +196,7 @@ public class OrderManager {
         //slice the order. We have to check this is a valid quantity.
         //Order has a list of slices, and a list of fills, each slice is a childorder and each fill is associated with either a child order or the original order
         if (sliceSize > order.getQuantityRemaining() - order.totalSliceQuantity()) {
-            logger.error("error sliceSize is bigger than remaining quantity to be filled on the order");
+            logger.error("Error sliceSize is bigger than remaining quantity to be filled on the order");
             return;
         }
         order.newSlice(sliceSize);
@@ -235,9 +233,18 @@ public class OrderManager {
     private void newFill(int id, int sliceId, int size, double price) throws IOException {
         Order order = orders.get(id);
         order.slices.get(sliceId).createFill(size, price);
-        if (order.getQuantityRemaining() == 0) {
+
+        // Send message to client, order status will tell the client weather it is partial/full
+        String message = "11=" + order.getClientOrderID() + ";35=0;39=" + order.getOrderStatus();
+        sendMessageToClient(order.getClientId(), message);
+
+        logger.info("Trade successful: ClientID:" + order.getClientId() + ", Instrument:" + order.getInstrument()
+                + ", Quantity: " + order.getQuantity());
+
+        if (order.getQuantityRemaining() == 0) { // complete fill
             Database.write(order);
         }
+
         sendOrderToTrader(id, order, TradeScreen.api.fill);
     }
 
@@ -268,7 +275,7 @@ public class OrderManager {
         }
         ObjectOutputStream objectOutputStream = new ObjectOutputStream(orderRouters[minIndex].getOutputStream());
         objectOutputStream.writeObject(Router.api.routeOrder);
-        objectOutputStream.writeInt(order.clientId);
+        objectOutputStream.writeInt(order.getClientId());
         objectOutputStream.writeInt(sliceId);
         objectOutputStream.writeInt(order.getQuantityRemaining());
         objectOutputStream.writeObject(order.getInstrument());

@@ -17,14 +17,13 @@ public class SampleRouter extends Thread implements Router {
     private static final Instrument[] INSTRUMENTS = {new Instrument(new Ric("VOD.L")), new Instrument(new Ric("BP.L")), new Instrument(new Ric("BT.L"))};
     private Socket omConn;
     private int port;
+    private ObjectInputStream objectInputStream;
+    private ObjectOutputStream objectOutputStream;
 
     public SampleRouter(String name, int port) {
         this.setName(name);
         this.port = port;
     }
-
-    ObjectInputStream objectInputStream;
-    ObjectOutputStream objectOutputStream;
 
     public void run() {
         //OM will connect to us
@@ -36,11 +35,11 @@ public class SampleRouter extends Thread implements Router {
                     Router.api methodName = (Router.api) objectInputStream.readObject();
                     System.out.println("Order Router received method call for:" + methodName);
                     switch (methodName) {
-                        case routeOrder:
-                            routeOrder(objectInputStream.readInt(), objectInputStream.readInt(), objectInputStream.readInt(), (Instrument) objectInputStream.readObject());
-                            break;
                         case priceAtSize:
                             priceAtSize(objectInputStream.readInt(), objectInputStream.readInt(), (Instrument) objectInputStream.readObject(), objectInputStream.readInt());
+                            break;
+                        case routeOrder:
+                            routeOrder(objectInputStream.readInt(), objectInputStream.readInt(), objectInputStream.readInt(), (Instrument) objectInputStream.readObject());
                             break;
                     }
                 } else {
@@ -51,6 +50,16 @@ public class SampleRouter extends Thread implements Router {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
+    }
+
+    @Override
+    public void priceAtSize(int id, int sliceId, Instrument i, int size) throws IOException {
+        objectOutputStream = new ObjectOutputStream(omConn.getOutputStream());
+        objectOutputStream.writeObject("bestPrice");
+        objectOutputStream.writeInt(id);
+        objectOutputStream.writeInt(sliceId);
+        objectOutputStream.writeDouble(199 * RANDOM_NUM_GENERATOR.nextDouble());
+        objectOutputStream.flush();
     }
 
     @Override
@@ -71,15 +80,5 @@ public class SampleRouter extends Thread implements Router {
 
     @Override
     public void sendCancel(int id, int sliceId, int size, Instrument i) { //MockI.show(""+order);
-    }
-
-    @Override
-    public void priceAtSize(int id, int sliceId, Instrument i, int size) throws IOException {
-        objectOutputStream = new ObjectOutputStream(omConn.getOutputStream());
-        objectOutputStream.writeObject("bestPrice");
-        objectOutputStream.writeInt(id);
-        objectOutputStream.writeInt(sliceId);
-        objectOutputStream.writeDouble(199 * RANDOM_NUM_GENERATOR.nextDouble());
-        objectOutputStream.flush();
     }
 }

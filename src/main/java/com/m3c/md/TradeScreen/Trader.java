@@ -82,9 +82,6 @@ public class Trader extends Thread implements TradeScreen {
 
         orders.put(id, order);
         acceptOrder(id);
-
-
-
     }
 
     @Override
