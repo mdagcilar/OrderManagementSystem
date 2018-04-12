@@ -192,16 +192,16 @@ public class OrderManager {
 
     public void sliceOrder(int id, int sliceSize) throws IOException {
         Order order = orders.get(id);
-        //slice the order. We have to check this is a valid size.
+        //slice the order. We have to check this is a valid quantity.
         //Order has a list of slices, and a list of fills, each slice is a childorder and each fill is associated with either a child order or the original order
-        if (sliceSize > order.sizeRemaining() - order.sliceSizes()) {
-            logger.error("error sliceSize is bigger than remaining size to be filled on the order");
+        if (sliceSize > order.getSizeRemaining() - order.sliceSizes()) {
+            logger.error("error sliceSize is bigger than remaining quantity to be filled on the order");
             return;
         }
         int sliceId = order.newSlice(sliceSize);
         Order slice = order.slices.get(sliceId);
         internalCross(id, slice);
-        int sizeRemaining = order.slices.get(sliceId).sizeRemaining();
+        int sizeRemaining = order.slices.get(sliceId).getSizeRemaining();
         if (sizeRemaining > 0) {
             routeOrder(id, sliceId, sizeRemaining, slice);
         }
@@ -220,9 +220,9 @@ public class OrderManager {
             if (!(matchingOrder.instrument.equals(order.instrument) && matchingOrder.getInitialMarketPrice() == order.getInitialMarketPrice()))
                 continue;
             //TODO add support here and in Order for limit orders
-            int sizeBefore = order.sizeRemaining();
+            int sizeBefore = order.getSizeRemaining();
             order.cross(matchingOrder);
-            if (sizeBefore != order.sizeRemaining()) {
+            if (sizeBefore != order.getSizeRemaining()) {
                 sendOrderToTrader(orderID, order, TradeScreen.api.cross);
             }
         }
@@ -235,7 +235,7 @@ public class OrderManager {
     private void newFill(int id, int sliceId, int size, double price) throws IOException {
         Order order = orders.get(id);
         order.slices.get(sliceId).createFill(size, price);
-        if (order.sizeRemaining() == 0) {
+        if (order.getSizeRemaining() == 0) {
             Database.write(order);
         }
         sendOrderToTrader(id, order, TradeScreen.api.fill);
@@ -248,7 +248,7 @@ public class OrderManager {
             objectOutputStream.writeInt(id);
             objectOutputStream.writeInt(sliceId);
             objectOutputStream.writeObject(order.instrument);
-            objectOutputStream.writeInt(order.sizeRemaining());
+            objectOutputStream.writeInt(order.getSizeRemaining());
             objectOutputStream.flush();
         }
         //need to wait for these prices to come back before routing
@@ -270,7 +270,7 @@ public class OrderManager {
         objectOutputStream.writeObject(Router.api.routeOrder);
         objectOutputStream.writeInt(order.clientId);
         objectOutputStream.writeInt(sliceId);
-        objectOutputStream.writeInt(order.sizeRemaining());
+        objectOutputStream.writeInt(order.getSizeRemaining());
         objectOutputStream.writeObject(order.instrument);
         objectOutputStream.flush();
     }

@@ -11,7 +11,6 @@ import java.util.Map;
 import javax.net.ServerSocketFactory;
 
 import com.m3c.md.OrderManager.Order;
-import com.m3c.md.TradeScreen.TradeScreen;
 
 public class Trader extends Thread implements TradeScreen {
     private Map<Integer, Order> orders = new HashMap<>();
@@ -105,7 +104,7 @@ public class Trader extends Thread implements TradeScreen {
 
         //TODO: Send price to the OutputStream. And remove slice from price()
         // either
-         sliceOrder(id, orders.get(id).sizeRemaining() / 2);
+        sliceOrder(id, orders.get(id).getSizeRemaining() / 2);
         // or
     }
 }

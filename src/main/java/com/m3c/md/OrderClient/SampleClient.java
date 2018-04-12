@@ -33,7 +33,7 @@ public class SampleClient extends Mock implements Client {
     @Override
     public int sendOrder(NewOrderSingle newOrderSingle) throws IOException {
 
-        Mock.show("sendOrder: id=" + id + " size=" + newOrderSingle.getSize() + " instrument=" + newOrderSingle.getInstrument().toString());
+        Mock.show("sendOrder: id=" + id + " quantity=" + newOrderSingle.getSize() + " instrument=" + newOrderSingle.getInstrument().toString());
         OUTGOING_ORDERS.put(id, newOrderSingle);
         if (omConn.isConnected()) {
             ObjectOutputStream objectOutputStream = new ObjectOutputStream(omConn.getOutputStream());
