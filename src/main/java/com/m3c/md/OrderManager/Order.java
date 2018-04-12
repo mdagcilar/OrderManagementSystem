@@ -10,6 +10,7 @@ public class Order implements Serializable {
 
     private long uniqueOrderID;
     private double initialMarketPrice;
+    private Instrument instrument;
     private char orderStatus = 'A'; //orderStatus is Fix 39, 'A' is 'Pending New'
 
     public ArrayList<Order> slices;
@@ -20,7 +21,6 @@ public class Order implements Serializable {
 
     double[] bestPrices;
 
-    public Instrument instrument;
     short orderRouter;
 
     public Order(int clientId, int clientOrderID, Instrument instrument, int quantity) {
@@ -31,6 +31,11 @@ public class Order implements Serializable {
         fills = new ArrayList<>();
         slices = new ArrayList<>();
     }
+
+    public Instrument getInstrument() {
+        return instrument;
+    }
+
 
     public char getOrderStatus() {
         return orderStatus;
@@ -52,7 +57,7 @@ public class Order implements Serializable {
         return quantity;
     }
 
-    public int getSizeRemaining() {
+    public int getQuantityRemaining() {
         return getQuantity() - sizeFilled();
     }
 
@@ -67,7 +72,7 @@ public class Order implements Serializable {
         return filledSoFar;
     }
 
-    public int sliceSizes() {
+    public int totalSliceQuantity() {
         int totalSizeOfSlices = 0;
 
         for (Order order : slices) {
@@ -96,7 +101,7 @@ public class Order implements Serializable {
 
     void createFill(int size, double price) {
         fills.add(new Fill(size, price));
-        if (getSizeRemaining() == 0) {
+        if (getQuantityRemaining() == 0) {
             setOrderStatus('2'); // order Filled
         } else {
             setOrderStatus('1'); // order Partially filled
@@ -106,12 +111,12 @@ public class Order implements Serializable {
     void cross(Order matchingOrder) {
         //pair slices first and then parent
         for (Order slice : slices) {
-            if (slice.getSizeRemaining() == 0) continue;
+            if (slice.getQuantityRemaining() == 0) continue;
             //TODO could optimise this to not start at the beginning every time
             for (Order matchingSlice : matchingOrder.slices) {
-                int matchingSize = matchingSlice.getSizeRemaining();
+                int matchingSize = matchingSlice.getQuantityRemaining();
                 if (matchingSize == 0) continue;
-                int remainingSize = slice.getSizeRemaining();
+                int remainingSize = slice.getQuantityRemaining();
                 if (remainingSize <= matchingSize) {
                     slice.createFill(remainingSize, initialMarketPrice);
                     matchingSlice.createFill(remainingSize, initialMarketPrice);
@@ -121,8 +126,8 @@ public class Order implements Serializable {
                 slice.createFill(matchingSize, initialMarketPrice);
                 matchingSlice.createFill(matchingSize, initialMarketPrice);
             }
-            int remainingSize = slice.getSizeRemaining();
-            int mParent = matchingOrder.getSizeRemaining() - matchingOrder.sliceSizes();
+            int remainingSize = slice.getQuantityRemaining();
+            int mParent = matchingOrder.getQuantityRemaining() - matchingOrder.totalSliceQuantity();
             if (remainingSize > 0 && mParent > 0) {
                 if (remainingSize >= mParent) {
                     slice.createFill(remainingSize, initialMarketPrice);
@@ -133,13 +138,14 @@ public class Order implements Serializable {
                 }
             }
             //no point continuing if we didn't fill this slice, as we must already have fully filled the matchingOrder
-            if (slice.getSizeRemaining() > 0) break;
+            if (slice.getQuantityRemaining() > 0) break;
         }
-        if (getSizeRemaining() > 0) {
+
+        if (getQuantityRemaining() > 0) {
             for (Order matchingSlice : matchingOrder.slices) {
-                int matchingSize = matchingSlice.getSizeRemaining();
+                int matchingSize = matchingSlice.getQuantityRemaining();
                 if (matchingSize == 0) continue;
-                int remainingSize = getSizeRemaining();
+                int remainingSize = getQuantityRemaining();
                 if (remainingSize <= matchingSize) {
                     createFill(remainingSize, initialMarketPrice);
                     matchingSlice.createFill(remainingSize, initialMarketPrice);
@@ -149,17 +155,18 @@ public class Order implements Serializable {
                 createFill(matchingSize, initialMarketPrice);
                 matchingSlice.createFill(matchingSize, initialMarketPrice);
             }
-            int remainingSize = getSizeRemaining();
-            int mParent = matchingOrder.getSizeRemaining() - matchingOrder.sliceSizes();
-            if (remainingSize > 0 && mParent > 0) {
-                if (remainingSize >= mParent) {
-                    createFill(remainingSize, initialMarketPrice);
-                    matchingOrder.createFill(remainingSize, initialMarketPrice);
-                } else {
-                    createFill(mParent, initialMarketPrice);
-                    matchingOrder.createFill(mParent, initialMarketPrice);
-                }
+            int remainingSize = getQuantityRemaining();
+            int matchingParentSize = matchingOrder.getQuantityRemaining() - matchingOrder.totalSliceQuantity();
+
+            // if current slice > matching order size, then complete fill on matching parent
+            if (remainingSize >= matchingParentSize) {
+                createFill(matchingParentSize, initialMarketPrice);
+                matchingOrder.createFill(matchingParentSize, initialMarketPrice);
+            } else { // complete fill on the remaining size
+                createFill(remainingSize, initialMarketPrice);
+                matchingOrder.createFill(remainingSize, initialMarketPrice);
             }
+
         }
     }
 

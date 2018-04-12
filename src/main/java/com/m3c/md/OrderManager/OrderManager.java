@@ -194,35 +194,32 @@ public class OrderManager {
         Order order = orders.get(id);
         //slice the order. We have to check this is a valid quantity.
         //Order has a list of slices, and a list of fills, each slice is a childorder and each fill is associated with either a child order or the original order
-        if (sliceSize > order.getSizeRemaining() - order.sliceSizes()) {
+        if (sliceSize > order.getQuantityRemaining() - order.totalSliceQuantity()) {
             logger.error("error sliceSize is bigger than remaining quantity to be filled on the order");
             return;
         }
         int sliceId = order.newSlice(sliceSize);
         Order slice = order.slices.get(sliceId);
         internalCross(id, slice);
-        int sizeRemaining = order.slices.get(sliceId).getSizeRemaining();
+        int sizeRemaining = order.slices.get(sliceId).getQuantityRemaining();
         if (sizeRemaining > 0) {
             routeOrder(id, sliceId, sizeRemaining, slice);
         }
     }
 
-    private void internalCross(int orderID, Order order) throws IOException {
-//        if (orders.containsKey(id)){
-//            Order hashmapOrder = orders.get(id);
-//            //hashmapOrder.instrument
-//        }
-
+    private void internalCross(int orderID, Order slicedOrder) throws IOException {
         for (Map.Entry<Integer, Order> entry : orders.entrySet()) {
-
-            if (entry.getKey().intValue() == orderID) continue;
-            Order matchingOrder = entry.getValue();
-            if (matchingOrder.instrument.toString() == order.instrument.toString() && matchingOrder.getInitialMarketPrice() == order.getInitialMarketPrice()) {
-                //TODO add support here and in Order for limit orders
-                int sizeBefore = order.getSizeRemaining();
-                order.cross(matchingOrder);
-                if (sizeBefore != order.getSizeRemaining()) {
-                    sendOrderToTrader(orderID, order, TradeScreen.api.cross);
+            // if not the same order
+            if (!(entry.getKey() == orderID)) {
+                Order matchingOrder = entry.getValue();
+                // if instrument matches and price is equal or less than client's order
+                if ((matchingOrder.getInstrument().toString().equals(slicedOrder.getInstrument().toString()))
+                        && (matchingOrder.getInitialMarketPrice() <= slicedOrder.getInitialMarketPrice())) {
+                    int sizeBefore = slicedOrder.getQuantityRemaining();
+                    slicedOrder.cross(matchingOrder);
+                    if (sizeBefore != slicedOrder.getQuantityRemaining()) {
+                        sendOrderToTrader(orderID, slicedOrder, TradeScreen.api.cross);
+                    }
                 }
             }
         }
@@ -235,7 +232,7 @@ public class OrderManager {
     private void newFill(int id, int sliceId, int size, double price) throws IOException {
         Order order = orders.get(id);
         order.slices.get(sliceId).createFill(size, price);
-        if (order.getSizeRemaining() == 0) {
+        if (order.getQuantityRemaining() == 0) {
             Database.write(order);
         }
         sendOrderToTrader(id, order, TradeScreen.api.fill);
@@ -247,8 +244,8 @@ public class OrderManager {
             objectOutputStream.writeObject(Router.api.priceAtSize);
             objectOutputStream.writeInt(id);
             objectOutputStream.writeInt(sliceId);
-            objectOutputStream.writeObject(order.instrument);
-            objectOutputStream.writeInt(order.getSizeRemaining());
+            objectOutputStream.writeObject(order.getInstrument());
+            objectOutputStream.writeInt(order.getQuantityRemaining());
             objectOutputStream.flush();
         }
         //need to wait for these prices to come back before routing
@@ -270,8 +267,8 @@ public class OrderManager {
         objectOutputStream.writeObject(Router.api.routeOrder);
         objectOutputStream.writeInt(order.clientId);
         objectOutputStream.writeInt(sliceId);
-        objectOutputStream.writeInt(order.getSizeRemaining());
-        objectOutputStream.writeObject(order.instrument);
+        objectOutputStream.writeInt(order.getQuantityRemaining());
+        objectOutputStream.writeObject(order.getInstrument());
         objectOutputStream.flush();
     }
 
