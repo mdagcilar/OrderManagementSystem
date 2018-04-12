@@ -81,11 +81,10 @@ public class Order implements Serializable {
         return totalSizeOfSlices;
     }
 
-    public int newSlice(int sliceSize) {
+    public void newSlice(int sliceSize) {
         Order slice = new Order(clientId, clientOrderID, instrument, sliceSize);
         slice.setInitialMarketPrice(initialMarketPrice);
         slices.add(slice);
-        return slices.size() - 1;
     }
 
 
@@ -99,7 +98,7 @@ public class Order implements Serializable {
         return sum / fills.size();
     }
 
-    void createFill(int size, double price) {
+    public void createFill(int size, double price) {
         fills.add(new Fill(size, price));
         if (getQuantityRemaining() == 0) {
             setOrderStatus('2'); // order Filled
