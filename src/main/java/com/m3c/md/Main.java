@@ -62,8 +62,13 @@ class MockClient extends Thread {
             SampleClient sampleClient = new SampleClient(port);
 
             NewOrderSingle newOrderSingle = new NewOrderSingle(500, 1000, new Instrument(new Ric("VOD.L")));
+            NewOrderSingle newOrderSingle3 = new NewOrderSingle(300, 5000, new Instrument(new Ric("BP.L")));
+            NewOrderSingle newOrderSingle2 = new NewOrderSingle(400, 1000, new Instrument(new Ric("VOD.L")));
+
 
             sampleClient.sendOrder(newOrderSingle);
+            sampleClient.sendOrder(newOrderSingle3);
+            sampleClient.sendOrder(newOrderSingle2);
             //int id = sampleClient.sendOrder(null);
             //TODO client.sendCancel(id);
             sampleClient.messageHandler();

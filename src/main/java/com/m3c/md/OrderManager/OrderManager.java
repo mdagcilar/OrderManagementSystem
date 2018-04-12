@@ -217,13 +217,13 @@ public class OrderManager {
 
             if (entry.getKey().intValue() == orderID) continue;
             Order matchingOrder = entry.getValue();
-            if (!(matchingOrder.instrument.equals(order.instrument) && matchingOrder.getInitialMarketPrice() == order.getInitialMarketPrice()))
-                continue;
-            //TODO add support here and in Order for limit orders
-            int sizeBefore = order.getSizeRemaining();
-            order.cross(matchingOrder);
-            if (sizeBefore != order.getSizeRemaining()) {
-                sendOrderToTrader(orderID, order, TradeScreen.api.cross);
+            if (matchingOrder.instrument.toString() == order.instrument.toString() && matchingOrder.getInitialMarketPrice() == order.getInitialMarketPrice()) {
+                //TODO add support here and in Order for limit orders
+                int sizeBefore = order.getSizeRemaining();
+                order.cross(matchingOrder);
+                if (sizeBefore != order.getSizeRemaining()) {
+                    sendOrderToTrader(orderID, order, TradeScreen.api.cross);
+                }
             }
         }
     }

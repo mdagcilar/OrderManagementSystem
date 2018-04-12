@@ -77,7 +77,9 @@ public class Order implements Serializable {
     }
 
     public int newSlice(int sliceSize) {
-        slices.add(new Order(clientId, clientOrderID, instrument, sliceSize));
+        Order slice = new Order(clientId, clientOrderID, instrument, sliceSize);
+        slice.setInitialMarketPrice(initialMarketPrice);
+        slices.add(slice);
         return slices.size() - 1;
     }
 
