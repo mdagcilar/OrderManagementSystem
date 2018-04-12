@@ -52,17 +52,17 @@ public class Trader extends Thread implements TradeScreen {
                             price(orderID, order);
                             break;
                         case cross:
+                            //TODO: link to internal cross
 //                            objectInputStream.readInt();
 //                            objectInputStream.readObject();
-                            break; //TODO
+                            break;
                         case fill:
+                            System.out.println("I'm in fil");
                             // TODO: send ack to user
-
-                            // TODO: write to the database
-
+                            // TODO: send message to OrderManager to write to the db
 //                            objectInputStream.readInt();
 //                            objectInputStream.readObject();
-                            break; //TODO
+                            break;
                     }
                 } else {
                     //System.out.println("Trader Waiting for data to be available - sleep 1s");
@@ -75,20 +75,16 @@ public class Trader extends Thread implements TradeScreen {
         }
     }
 
+    //TODO the order should go in a visual grid, but not needed for test purposes
     @Override
     public void newOrder(int id, Order order) throws IOException, InterruptedException {
-        //TODO the order should go in a visual grid, but not needed for test purposes
         Thread.sleep(1000);
 
-        // Current threshold for spiting an order is 100,000.
-        if (order.getQuantity() > 100000) {
-            // slice order
-            sliceOrder(id, orders.get(id).getQuantityRemaining() / 2);
-        } else {
-            // just accept Order as a single Order.
-            orders.put(id, order);
-            acceptOrder(id);
-        }
+        orders.put(id, order);
+        acceptOrder(id);
+
+
+
     }
 
     @Override
@@ -101,7 +97,7 @@ public class Trader extends Thread implements TradeScreen {
 
     private void completeOrder(int id) throws IOException {
         objectOutputStream = new ObjectOutputStream(omConn.getOutputStream());
-        objectOutputStream.writeObject("acceptOrder");
+        objectOutputStream.writeObject("completeOrder");
         objectOutputStream.writeInt(id);
         objectOutputStream.flush();
     }
@@ -111,8 +107,14 @@ public class Trader extends Thread implements TradeScreen {
     @Override
     public void price(int id, Order order) throws InterruptedException, IOException {
         Thread.sleep(1000);
-        // slice order
-        sliceOrder(id, orders.get(id).getQuantityRemaining() / 2);
+
+        if (order.getQuantity() > 100000) {     // Current threshold for spiting an order is 100,000.
+            // slice order
+            sliceOrder(id, orders.get(id).getQuantityRemaining() / 2);
+        } else {
+            // just accept Order as a single Order.
+            sliceOrder(id, orders.get(id).getQuantityRemaining());
+        }
     }
 
     @Override
