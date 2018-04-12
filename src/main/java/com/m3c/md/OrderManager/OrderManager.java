@@ -201,7 +201,8 @@ public class OrderManager {
             logger.error("error sliceSize is bigger than remaining quantity to be filled on the order");
             return;
         }
-        int sliceId = order.newSlice(sliceSize);
+        order.newSlice(sliceSize);
+        int sliceId = order.slices.size() - 1;
         Order slice = order.slices.get(sliceId);
 
         internalCross(id, slice);
