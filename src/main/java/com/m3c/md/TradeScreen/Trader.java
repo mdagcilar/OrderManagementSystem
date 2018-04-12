@@ -57,7 +57,7 @@ public class Trader extends Thread implements TradeScreen {
 //                            objectInputStream.readObject();
                             break;
                         case fill:
-                            System.out.println("I'm in fil");
+                            System.out.println("I'm in fill");
                             // TODO: send ack to user
                             // TODO: send message to OrderManager to write to the db
 //                            objectInputStream.readInt();

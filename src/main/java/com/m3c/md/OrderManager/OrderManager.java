@@ -232,7 +232,14 @@ public class OrderManager {
 
     private void newFill(int id, int sliceId, int size, double price) throws IOException {
         Order order = orders.get(id);
-        order.slices.get(sliceId).createFill(size, price);
+        order.slices.get(sliceId).createFill(size, price);      // sliced order status will change to '1' or '2'
+
+        // set order status of Parent Order.
+        if (order.isOrderSatisfied()) {
+            order.setOrderStatus('2');
+        } else if (order.isOrderPartiallySatisfied()) {
+            order.setOrderStatus('1');
+        }
 
         // Send message to client, order status will tell the client weather it is partial/full
         String message = "11=" + order.getClientOrderID() + ";35=0;39=" + order.getOrderStatus();
@@ -275,6 +282,7 @@ public class OrderManager {
         }
         ObjectOutputStream objectOutputStream = new ObjectOutputStream(orderRouters[minIndex].getOutputStream());
         objectOutputStream.writeObject(Router.api.routeOrder);
+        //objectOutputStream.writeInt(order.getClientId() + order.getClientOrderID());
         objectOutputStream.writeInt(order.getClientId());
         objectOutputStream.writeInt(sliceId);
         objectOutputStream.writeInt(order.getQuantityRemaining());

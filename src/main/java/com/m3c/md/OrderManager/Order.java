@@ -51,9 +51,6 @@ public class Order implements Serializable {
         this.initialMarketPrice = initialMarketPrice;
     }
 
-    public int getQuantity() {
-        return quantity;
-    }
 
     public int getClientId() {
         return clientId;
@@ -63,8 +60,22 @@ public class Order implements Serializable {
         return clientOrderID;
     }
 
+    public int getQuantity() {
+        return quantity;
+    }
+
     public int getQuantityRemaining() {
         return getQuantity() - sizeFilled();
+    }
+
+    // Returns true if order has no remaining quantity
+    public boolean isOrderSatisfied() {
+        return getQuantityRemaining() == 0;
+    }
+
+    // returns true is the remaining quantity is less than the original quantity
+    public boolean isOrderPartiallySatisfied() {
+        return getQuantityRemaining() < getQuantity();
     }
 
     private int sizeFilled() {

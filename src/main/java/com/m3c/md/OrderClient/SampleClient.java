@@ -103,8 +103,12 @@ public class SampleClient extends Mock implements Client {
                                 break;
                             case "39":
                                 int orderStatus = tag_value[1].charAt(0);
-                                if(orderStatus == '0') {
+                                if (orderStatus == '0') {
                                     acceptOrderAck(orderId);
+                                } else if (orderStatus == '1') {
+                                    partialOrderAck(orderId);
+                                } else if (orderStatus == '2') {
+                                    completeOrderAck(orderId);
                                 }
                                 break;
                         }
@@ -131,9 +135,16 @@ public class SampleClient extends Mock implements Client {
         System.out.println((Thread.currentThread().getName() + " called newOrderAck, with OrderID: " + OrderId));
         //do nothing, as not recording so much state in the NOS class at present
     }
+
     void acceptOrderAck(int OrderId) {
 //        logger.info(Thread.currentThread().getName() + " called newOrderAck, with OrderID: " + OrderId);
         System.out.println((Thread.currentThread().getName() + " called acceptOrderAck, with OrderID: " + OrderId));
+        //do nothing, as not recording so much state in the NOS class at present
+    }
+
+    void partialOrderAck(int OrderId) {
+//        logger.info(Thread.currentThread().getName() + " called newOrderAck, with OrderID: " + OrderId);
+        System.out.println((Thread.currentThread().getName() + " called partialOrderAck, with OrderID: " + OrderId));
         //do nothing, as not recording so much state in the NOS class at present
     }
 
@@ -142,6 +153,7 @@ public class SampleClient extends Mock implements Client {
         System.out.println((Thread.currentThread().getName() + " called completeOrderAck, with OrderID: " + OrderId));
         //do nothing, as not recording so much state in the NOS class at present
     }
+
 /*listen for connections
 once order manager has connected, then send and cancel orders randomly
 listen for messages from order manager and print them to stdout.*/
