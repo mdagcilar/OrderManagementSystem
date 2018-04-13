@@ -124,6 +124,10 @@ public class OrderManager {
                         break;
                     case "sliceOrder":
                         sliceOrder(orderID, objectInputStream.readInt());
+                        break;
+                    case "cross":
+                        crossComplete(orderID, (Order) objectInputStream.readObject());
+                        break;
                 }
             }
         }
@@ -221,6 +225,7 @@ public class OrderManager {
                 if ((matchingOrder.getInstrument().toString().equals(order.getInstrument().toString()))
                         && (matchingOrder.getInitialMarketPrice() <= order.getInitialMarketPrice())) {
                     int sizeBefore = order.getQuantityRemaining();
+                    order.setInitialMarketPrice(matchingOrder.getInitialMarketPrice());
                     order.cross(matchingOrder);
                     if (sizeBefore != order.getQuantityRemaining()) {
                         sendOrderToTrader(orderID, order, TradeScreen.api.cross);
@@ -228,6 +233,14 @@ public class OrderManager {
                 }
             }
         }
+    }
+
+    private void crossComplete(int orderID, Order order) throws IOException {
+        int sliceId = order.slices.size() - 1;
+        Order slice = order.slices.get(sliceId);
+        int sizeFilled = order.slices.get(sliceId).sizeFilled();
+
+        newFill(orderID, sliceId, sizeFilled, order.getInitialMarketPrice());
     }
 
     private void newFill(int orderId, int sliceId, int size, double price) throws IOException {

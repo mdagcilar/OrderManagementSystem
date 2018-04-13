@@ -78,7 +78,7 @@ public class Order implements Serializable {
         return getQuantityRemaining() < getQuantity();
     }
 
-    private int sizeFilled() {
+    public int sizeFilled() {
         int filledSoFar = 0;
         for (Fill f : fills) {
             filledSoFar += f.getSize();
@@ -143,7 +143,7 @@ public class Order implements Serializable {
                 matchingSlice.createFill(matchingSize, initialMarketPrice);
             }
             int remainingSize = slice.getQuantityRemaining();
-            int mParent = matchingOrder.getQuantityRemaining() - matchingOrder.totalSliceQuantity();
+            int mParent = matchingOrder.getQuantityRemaining();
             if (remainingSize > 0 && mParent > 0) {
                 if (remainingSize >= mParent) {
                     slice.createFill(remainingSize, initialMarketPrice);
@@ -172,16 +172,15 @@ public class Order implements Serializable {
                 matchingSlice.createFill(matchingSize, initialMarketPrice);
             }
             int remainingSize = getQuantityRemaining();
-            int matchingParentSize = matchingOrder.getQuantityRemaining() - matchingOrder.totalSliceQuantity();
+            int matchingParentSize = matchingOrder.getQuantityRemaining();
 
-            // if current slice > matching order size, then complete fill on matching parent
-            if (remainingSize >= matchingParentSize) {
-                createFill(matchingParentSize, initialMarketPrice);
-                matchingOrder.createFill(matchingParentSize, initialMarketPrice);
-            } else { // complete fill on the remaining size
-                createFill(remainingSize, initialMarketPrice);
-                matchingOrder.createFill(remainingSize, initialMarketPrice);
-            }
+//            if (remainingSize >= matchingParentSize) {
+//                createFill(matchingParentSize, initialMarketPrice);
+//                matchingOrder.createFill(matchingParentSize, initialMarketPrice);
+//            } else {
+//                createFill(remainingSize, initialMarketPrice);
+//                matchingOrder.createFill(remainingSize, initialMarketPrice);
+//            }
 
         }
     }
