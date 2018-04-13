@@ -11,6 +11,6 @@ public interface Router {
 
     void sendCancel(int id, int sliceId, int size, Instrument i);
 
-    void priceAtSize(int id, int sliceId, Instrument i, int size) throws IOException;
+    void priceAtSize(int id, int sliceId, int size, Instrument i) throws IOException;
 
 }

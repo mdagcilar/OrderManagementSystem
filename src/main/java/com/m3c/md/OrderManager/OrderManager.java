@@ -191,8 +191,8 @@ public class OrderManager {
         objectOutputStream.flush();
     }
 
-    public void sliceOrder(int id, int sliceSize) throws IOException {
-        Order order = orders.get(id);
+    public void sliceOrder(int orderId, int sliceSize) throws IOException {
+        Order order = orders.get(orderId);
         //slice the order. We have to check this is a valid quantity.
         //Order has a list of slices, and a list of fills, each slice is a childorder and each fill is associated with either a child order or the original order
         if (sliceSize > order.getQuantityRemaining() - order.totalSliceQuantity()) {
@@ -203,12 +203,12 @@ public class OrderManager {
         int sliceId = order.slices.size() - 1;
         Order slice = order.slices.get(sliceId);
 
-        internalCross(id, slice);
+        internalCross(orderId, slice);
         int sizeRemaining = order.slices.get(sliceId).getQuantityRemaining();
 
         // if slice remaining is not satisfied by internalCross, route order outside.
         if (sizeRemaining > 0) {
-            routeOrder(id, sliceId, sizeRemaining, slice);
+            routeOrder(orderId, sliceId, sizeRemaining, slice);
         }
     }
 
@@ -230,8 +230,9 @@ public class OrderManager {
         }
     }
 
-    private void newFill(int id, int sliceId, int size, double price) throws IOException {
-        Order order = orders.get(id);
+    private void newFill(int orderId, int sliceId, int size, double price) throws IOException {
+        Order order = orders.get(orderId);
+        System.out.println("OrderID: " + orderId + ", Slice ID: " + sliceId);
         order.slices.get(sliceId).createFill(size, price);      // sliced order status will change to '1' or '2'
 
         // set order status of Parent Order.
@@ -245,24 +246,26 @@ public class OrderManager {
         String message = "11=" + order.getClientOrderID() + ";35=0;39=" + order.getOrderStatus();
         sendMessageToClient(order.getClientId(), message);
 
-        logger.info("Trade successful: ClientID:" + order.getClientId() + ", Instrument:" + order.getInstrument()
-                + ", Quantity: " + order.getQuantity());
+        logger.info(
+                "Trade successful: ClientID:" + order.getClientId() + ", ClientOrderId: " + order.getClientOrderID()
+                        + ", Instrument:" + order.getInstrument()
+                        + ", Quantity: " + order.getQuantity() + ", Quantity remaining: " + order.getQuantityRemaining());
 
         if (order.getQuantityRemaining() == 0) { // complete fill
             Database.write(order);
         }
 
-        sendOrderToTrader(id, order, TradeScreen.api.fill);
+        sendOrderToTrader(orderId, order, TradeScreen.api.fill);
     }
 
-    private void routeOrder(int id, int sliceId, int size, Order order) throws IOException {
+    private void routeOrder(int orderId, int sliceId, int size, Order order) throws IOException {
         for (Socket r : orderRouters) {
             ObjectOutputStream objectOutputStream = new ObjectOutputStream(r.getOutputStream());
             objectOutputStream.writeObject(Router.api.priceAtSize);
-            objectOutputStream.writeInt(id);
+            objectOutputStream.writeInt(orderId);
             objectOutputStream.writeInt(sliceId);
-            objectOutputStream.writeObject(order.getInstrument());
             objectOutputStream.writeInt(order.getQuantityRemaining());
+            objectOutputStream.writeObject(order.getInstrument());
             objectOutputStream.flush();
         }
         //need to wait for these prices to come back before routing

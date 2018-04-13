@@ -32,14 +32,20 @@ public class SampleRouter extends Thread implements Router {
             while (true) {
                 if (0 < omConn.getInputStream().available()) {
                     objectInputStream = new ObjectInputStream(omConn.getInputStream());
+
                     Router.api methodName = (Router.api) objectInputStream.readObject();
+                    int orderId = objectInputStream.readInt();
+                    int slideId = objectInputStream.readInt();
+                    int quantityRemaining = objectInputStream.readInt();
+                    Instrument instrument = (Instrument) objectInputStream.readObject();
+
                     System.out.println("Order Router received method call for:" + methodName);
                     switch (methodName) {
                         case priceAtSize:
-                            priceAtSize(objectInputStream.readInt(), objectInputStream.readInt(), (Instrument) objectInputStream.readObject(), objectInputStream.readInt());
+                            priceAtSize(orderId, slideId, quantityRemaining, instrument);
                             break;
                         case routeOrder:
-                            routeOrder(objectInputStream.readInt(), objectInputStream.readInt(), objectInputStream.readInt(), (Instrument) objectInputStream.readObject());
+                            routeOrder(orderId, slideId, quantityRemaining, instrument);
                             break;
                     }
                 } else {
@@ -53,7 +59,7 @@ public class SampleRouter extends Thread implements Router {
     }
 
     @Override
-    public void priceAtSize(int id, int sliceId, Instrument i, int size) throws IOException {
+    public void priceAtSize(int id, int sliceId, int size, Instrument i) throws IOException {
         objectOutputStream = new ObjectOutputStream(omConn.getOutputStream());
         objectOutputStream.writeObject("bestPrice");
         objectOutputStream.writeInt(id);
