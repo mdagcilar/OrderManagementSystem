@@ -28,7 +28,7 @@ public class Main {
 
         //start sample clients
         (new MockClient("Client 1", 2000)).start();
-//        (new MockClient("Client 2", 2001)).start();
+        //(new MockClient("Client 2", 2001)).start();
 
         //start sample routers
         (new SampleRouter("Router LSE", 2010)).start();

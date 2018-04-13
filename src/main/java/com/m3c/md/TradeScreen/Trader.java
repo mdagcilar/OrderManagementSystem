@@ -88,14 +88,15 @@ public class Trader extends Thread implements TradeScreen {
         Thread.sleep(1000);
 
         orders.put(id, order);
-        acceptOrder(id);
+        acceptOrder(id, order);
     }
 
     @Override
-    public void acceptOrder(int id) throws IOException {
+    public void acceptOrder(int id, Order order) throws IOException {
         objectOutputStream = new ObjectOutputStream(omConn.getOutputStream());
         objectOutputStream.writeObject("acceptOrder");
         objectOutputStream.writeInt(id);
+        objectOutputStream.writeObject(order);
         objectOutputStream.flush();
     }
 
@@ -114,19 +115,20 @@ public class Trader extends Thread implements TradeScreen {
 
         if (order.getQuantity() > 100000) {     // Current threshold for spiting an order is 100,000.
             // slice order
-            sliceOrder(id, orders.get(id).getQuantityRemaining() / 2);
+            sliceOrder(id, orders.get(id).getQuantityRemaining() / 2, order);
         } else {
             // just accept Order as a single Order.
-            sliceOrder(id, orders.get(id).getQuantityRemaining());
+            sliceOrder(id, orders.get(id).getQuantityRemaining(), order);
         }
     }
 
     @Override
-    public void sliceOrder(int id, int sliceSize) throws IOException {
+    public void sliceOrder(int id, int sliceSize, Order order) throws IOException {
         objectOutputStream = new ObjectOutputStream(omConn.getOutputStream());
         objectOutputStream.writeObject("sliceOrder");
         objectOutputStream.writeInt(id);
         objectOutputStream.writeInt(sliceSize);
+        objectOutputStream.writeObject(order);
         objectOutputStream.flush();
     }
 }
