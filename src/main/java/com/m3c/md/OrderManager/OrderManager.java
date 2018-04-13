@@ -89,6 +89,7 @@ public class OrderManager {
 
                     String method = (String) objectInputStream.readObject();
                     int orderId = objectInputStream.readInt();
+                    int clientOrderId = objectInputStream.readInt();
                     int sliceId = objectInputStream.readInt();
 
                     System.out.println(Thread.currentThread().getName() + " calling " + method + ", with OrderID: " + orderId);
@@ -103,7 +104,7 @@ public class OrderManager {
                                 reallyRouteOrder(sliceId, slice);
                             break;
                         case "newFill":
-                            newFill(orderId, sliceId, objectInputStream.readInt(), objectInputStream.readDouble());
+                            newFill(orderId, clientOrderId, sliceId, objectInputStream.readInt(), objectInputStream.readDouble());
                             break;
                     }
                 }
@@ -240,12 +241,12 @@ public class OrderManager {
         Order slice = order.slices.get(sliceId);
         int sizeFilled = order.slices.get(sliceId).sizeFilled();
 
-        newFill(orderID, sliceId, sizeFilled, order.getInitialMarketPrice());
+        newFill(orderID, order.getClientOrderID(), sliceId, sizeFilled, order.getInitialMarketPrice());
     }
 
-    private void newFill(int orderId, int sliceId, int size, double price) throws IOException {
-        Order order = orders.get(orderId);
-        System.out.println("OrderID: " + orderId + ", Slice ID: " + sliceId);
+    private void newFill(int orderId, int clientOrderId, int sliceId, int size, double price) throws IOException {
+        Order order = orders.get(clientOrderId);
+        System.out.println("OrderID: " + orderId + ", clientOrderId: " + clientOrderId + ", Slice ID: " + sliceId);
         order.slices.get(sliceId).createFill(size, price);      // sliced order status will change to '1' or '2'
 
         // set order status of Parent Order.
@@ -276,6 +277,7 @@ public class OrderManager {
             ObjectOutputStream objectOutputStream = new ObjectOutputStream(r.getOutputStream());
             objectOutputStream.writeObject(Router.api.priceAtSize);
             objectOutputStream.writeInt(orderId);
+            objectOutputStream.writeInt(order.getClientOrderID());
             objectOutputStream.writeInt(sliceId);
             objectOutputStream.writeInt(order.getQuantityRemaining());
             objectOutputStream.writeObject(order.getInstrument());
@@ -300,6 +302,7 @@ public class OrderManager {
         objectOutputStream.writeObject(Router.api.routeOrder);
         //objectOutputStream.writeInt(order.getClientId() + order.getClientOrderID());
         objectOutputStream.writeInt(order.getClientId());
+        objectOutputStream.writeInt(order.getClientOrderID());
         objectOutputStream.writeInt(sliceId);
         objectOutputStream.writeInt(order.getQuantityRemaining());
         objectOutputStream.writeObject(order.getInstrument());

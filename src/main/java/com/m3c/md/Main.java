@@ -27,9 +27,8 @@ public class Main {
         logger.info("TEST: this program tests ordermanager");
 
         //start sample clients
-        MockClient mockClient = new MockClient("Client 1", 2000);
-        mockClient.start();
-        //(new MockClient("Client 2", 2001)).start();
+        (new MockClient("Client 1", 2000)).start();
+//        (new MockClient("Client 2", 2001)).start();
 
         //start sample routers
         (new SampleRouter("Router LSE", 2010)).start();
@@ -64,7 +63,6 @@ class MockClient extends Thread {
             NewOrderSingle newOrderSingle = new NewOrderSingle(500, 1000, new Instrument(new Ric("VOD.L")));
             NewOrderSingle newOrderSingle3 = new NewOrderSingle(300, 5000, new Instrument(new Ric("BP.L")));
             NewOrderSingle newOrderSingle2 = new NewOrderSingle(400, 1000, new Instrument(new Ric("VOD.L")));
-
 
             sampleClient.sendOrder(newOrderSingle);
             sampleClient.sendOrder(newOrderSingle3);
