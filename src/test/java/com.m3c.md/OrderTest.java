@@ -15,7 +15,7 @@ import java.util.ArrayList;
 public class OrderTest {
 
 
-    private Order testOrder;
+    private Order testOrder, testOrder2, testMatchingOrder;
     private Fill testFill = mock(Fill.class);
     private Fill testFill2 = mock(Fill.class);
     public Instrument testInstrument = mock(Instrument.class);
@@ -45,9 +45,49 @@ public class OrderTest {
         Assert.assertEquals('1', testOrder.getOrderStatus());
     }
 
+    @Before
+    public void newSetup() {
+        testOrder2 = new Order(0,0, testInstrument, 1000);
+    }
+
     @Test
     public void createFillTestFull() {
-        testOrder.createFill(1000, 0);
-        Assert.assertEquals('2', testOrder.getOrderStatus());
+        testOrder2.createFill(1000, 0);
+        Assert.assertEquals('2', testOrder2.getOrderStatus());
     }
+
+    @Test
+    public void newSliceTest() {
+        testOrder2.newSlice(500);
+        int newSliceIndex = testOrder2.slices.size() - 1;
+        Assert.assertEquals(500, testOrder2.slices.get(newSliceIndex).getQuantity());
+    }
+
+//    @Before
+//    public void setupCrossTest1() {
+//        testOrder2 = new Order(0, 0, testInstrument, 1000);
+//        testMatchingOrder = new Order(0, 0, testInstrument, 1000);
+//
+//    }
+//
+//    @Test
+//    public void crossTest1() {
+//
+//    }
+    @Test
+    public void isOrderSatisfiedTest() {
+        testOrder = new Order(0, 0, testInstrument, 1000);
+        testOrder.fills.add(testFill);
+        when(testFill.getSize()).thenReturn(1000);
+        Assert.assertTrue(testOrder.isOrderSatisfied());
+    }
+
+    @Test
+    public void isOrderPartiallySatisfiedTest() {
+        testOrder = new Order(0, 0, testInstrument, 1000);
+        testOrder.fills.add(testFill);
+        when(testFill.getSize()).thenReturn(800);
+        Assert.assertTrue(testOrder.isOrderPartiallySatisfied());
+    }
+
 }

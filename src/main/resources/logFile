@@ -1,0 +1,13 @@
+13-04-2018 12:14:07 INFO [main] Main - TEST: this program tests ordermanager
+13-04-2018 12:14:08 INFO [Order Manager] OrderManager - Socket connection successful - localhost/127.0.0.1:2020
+13-04-2018 12:14:08 INFO [Order Manager] OrderManager - Socket connection successful - localhost/127.0.0.1:2010
+13-04-2018 12:14:08 INFO [Order Manager] OrderManager - Socket connection successful - localhost/127.0.0.1:2000
+13-04-2018 12:14:13 INFO [Order Manager] OrderManager - Trade successful: ClientID:0, ClientOrderId: 0, Instrument:VOD.L, Quantity: 500, Quantity remaining: 19
+13-04-2018 12:14:14 INFO [Order Manager] OrderManager - Trade successful: ClientID:0, ClientOrderId: 0, Instrument:VOD.L, Quantity: 500, Quantity remaining: -36
+13-04-2018 12:14:15 INFO [Order Manager] OrderManager - Trade successful: ClientID:0, ClientOrderId: 0, Instrument:VOD.L, Quantity: 500, Quantity remaining: -338
+13-04-2018 17:38:43 INFO [main] Main - TEST: this program tests ordermanager
+13-04-2018 17:38:43 INFO [Order Manager] OrderManager - Socket connection successful - localhost/127.0.0.1:2020
+13-04-2018 17:38:43 INFO [Order Manager] OrderManager - Socket connection successful - localhost/127.0.0.1:2010
+13-04-2018 17:38:43 INFO [Order Manager] OrderManager - Socket connection successful - localhost/127.0.0.1:2000
+13-04-2018 17:38:48 INFO [Order Manager] OrderManager - Trade successful: ClientID:0, ClientOrderId: 0, Instrument:VOD.L, Quantity: 500, Quantity remaining: 142
+13-04-2018 17:38:49 INFO [Order Manager] OrderManager - Trade successful: ClientID:0, ClientOrderId: 1, Instrument:BP.L, Quantity: 300, Quantity remaining: 90
