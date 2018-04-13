@@ -142,17 +142,6 @@ public class Order implements Serializable {
                 slice.createFill(matchingSize, initialMarketPrice);
                 matchingSlice.createFill(matchingSize, initialMarketPrice);
             }
-            int remainingSize = slice.getQuantityRemaining();
-            int mParent = matchingOrder.getQuantityRemaining();
-            if (remainingSize > 0 && mParent > 0) {
-                if (remainingSize >= mParent) {
-                    slice.createFill(remainingSize, initialMarketPrice);
-                    matchingOrder.createFill(remainingSize, initialMarketPrice);
-                } else {
-                    slice.createFill(mParent, initialMarketPrice);
-                    matchingOrder.createFill(mParent, initialMarketPrice);
-                }
-            }
             //no point continuing if we didn't fill this slice, as we must already have fully filled the matchingOrder
             if (slice.getQuantityRemaining() > 0) break;
         }
@@ -171,17 +160,6 @@ public class Order implements Serializable {
                 createFill(matchingSize, initialMarketPrice);
                 matchingSlice.createFill(matchingSize, initialMarketPrice);
             }
-            int remainingSize = getQuantityRemaining();
-            int matchingParentSize = matchingOrder.getQuantityRemaining();
-
-//            if (remainingSize >= matchingParentSize) {
-//                createFill(matchingParentSize, initialMarketPrice);
-//                matchingOrder.createFill(matchingParentSize, initialMarketPrice);
-//            } else {
-//                createFill(remainingSize, initialMarketPrice);
-//                matchingOrder.createFill(remainingSize, initialMarketPrice);
-//            }
-
         }
     }
 

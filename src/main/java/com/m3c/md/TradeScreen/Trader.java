@@ -53,6 +53,7 @@ public class Trader extends Thread implements TradeScreen {
                             break;
                         case cross:
                             //TODO: link to internal cross
+                            cross(orderID, order);
 //                            objectInputStream.readInt();
 //                            objectInputStream.readObject();
                             break;
@@ -72,6 +73,13 @@ public class Trader extends Thread implements TradeScreen {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
+    }
+
+    private void cross(int orderID, Order order) throws IOException {
+        objectOutputStream = new ObjectOutputStream(omConn.getOutputStream());
+        objectOutputStream.writeObject("cross");
+        objectOutputStream.writeInt(orderID);
+        objectOutputStream.writeObject(order);
     }
 
     //TODO the order should go in a visual grid, but not needed for test purposes
