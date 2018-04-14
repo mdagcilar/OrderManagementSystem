@@ -92,7 +92,6 @@ public class OrderManager {
                     int orderId = objectInputStream.readInt();
                     int clientId = objectInputStream.readInt();
                     int clientOrderId = objectInputStream.readInt();
-                    int sliceId = objectInputStream.readInt();
 
                     System.out.println(Thread.currentThread().getName() + " calling " + method +
                             ", with Order: [" + clientId + "," + clientOrderId + "]");
@@ -106,10 +105,10 @@ public class OrderManager {
                             slice.bestPrices[routerIndex] = objectInputStream.readDouble();
                             slice.bestPriceCount += 1;
                             if (slice.bestPriceCount == slice.bestPrices.length)
-                                reallyRouteOrder(sliceId, slice);
+                                reallyRouteOrder(clientOrderId, slice);
                             break;
                         case "newFill":
-                            newFill(orderId, clientId, clientOrderId, sliceId, objectInputStream.readInt(), objectInputStream.readDouble());
+                            newFill(orderId, clientId, clientOrderId, objectInputStream.readInt(), objectInputStream.readDouble());
                             break;
                     }
                 }
@@ -165,7 +164,6 @@ public class OrderManager {
     }
 
     private void newOrder(int clientId, int clientOrderId, NewOrderSingle newOrderSingle) throws IOException {
-        // put the order in the hashmap
         Order order = new Order(clientId, clientOrderId, newOrderSingle.getInstrument(), newOrderSingle.getSize());
 
         if (ordersHashMap.containsKey(clientId)) {
@@ -186,7 +184,6 @@ public class OrderManager {
 
 
     public void acceptOrder(int orderId, Order order) throws IOException {
-
         if (order.getOrderStatus() != 'A') { //Pending New
             logger.error("Error accepting order that has already been accepted");
             return;
@@ -210,18 +207,12 @@ public class OrderManager {
     public void sliceOrder(int orderId, int sliceSize, int clientId, int clientOrderId) throws IOException {
         Order order = ordersHashMap.get(clientId).get(clientOrderId);
 
-        //slice the order. We have to check this is a valid quantity.
-        //Order has a list of slices, and a list of fills, each slice is a childorder and each fill is associated with either a child order or the original order
         if (sliceSize > order.getQuantityRemaining()) {
             logger.error("Error sliceSize is bigger than remaining quantity to be filled on the order");
             return;
         }
-
         order.createNewSlice(sliceSize);
-        int sliceId = order.getSlices().size() - 1;
-        Order slice = order.getClientOrder(sliceId);
-
-        routeOrder(orderId, clientId, clientOrderId, slice.getQuantityRemaining());
+        routeOrder(orderId, clientId, clientOrderId);
 
         // Commenting out internal cross
 //        internalCross(clientId, slice, clientOrderId);
@@ -240,10 +231,10 @@ public class OrderManager {
 
         int sizeFilled = slice.sizeFilled();
 
-        newFill(orderID, order.getClientId(), order.getClientOrderID(), sliceId, sizeFilled, order.getInitialMarketPrice());
+        newFill(orderID, order.getClientId(), order.getClientOrderID(), sizeFilled, order.getInitialMarketPrice());
     }
 
-    private void newFill(int orderId, int clientId, int clientOrderId, int sliceId, int size, double price) throws IOException {
+    private void newFill(int orderId, int clientId, int clientOrderId, int size, double price) throws IOException {
         // Returns the slice of an Order
         Order slice = ordersHashMap.get(clientId).get(clientOrderId);
 
@@ -272,28 +263,25 @@ public class OrderManager {
         }
     }
 
-    private void routeOrder(int orderId, int clientId, int clientOrderId, int size) throws IOException {
+    private void routeOrder(int orderId, int clientId, int clientOrderId) throws IOException {
         Order order = ordersHashMap.get(clientId).get(clientOrderId);
 
         for (Socket r : orderRouters) {
             ObjectOutputStream objectOutputStream = new ObjectOutputStream(r.getOutputStream());
             objectOutputStream.writeObject(Router.api.priceAtSize);
             objectOutputStream.writeInt(orderId);
-            //TODO: remove multiple clientOrderIds
             objectOutputStream.writeInt(order.getClientId());
             objectOutputStream.writeInt(order.getClientOrderID());
-            objectOutputStream.writeInt(clientOrderId);
             objectOutputStream.writeInt(order.getQuantityRemaining());
             objectOutputStream.writeObject(order.getInstrument());
             objectOutputStream.flush();
         }
-        //need to wait for these prices to come back before routing
 
         order.bestPrices = new double[orderRouters.length];
         order.bestPriceCount = 0;
     }
 
-    private void reallyRouteOrder(int sliceId, Order order) throws IOException {
+    private void reallyRouteOrder(int clientOrderId, Order order) throws IOException {
         //TODO this assumes we are buying rather than selling
         int minIndex = 0;
         double min = order.bestPrices[0];
@@ -305,10 +293,9 @@ public class OrderManager {
         }
         ObjectOutputStream objectOutputStream = new ObjectOutputStream(orderRouters[minIndex].getOutputStream());
         objectOutputStream.writeObject(Router.api.routeOrder);
-        objectOutputStream.writeInt(sliceId);
+        objectOutputStream.writeInt(clientOrderId);
         objectOutputStream.writeInt(order.getClientId());
         objectOutputStream.writeInt(order.getClientOrderID());
-        objectOutputStream.writeInt(sliceId);
         objectOutputStream.writeInt(order.getQuantityRemaining());
         objectOutputStream.writeObject(order.getInstrument());
         objectOutputStream.flush();

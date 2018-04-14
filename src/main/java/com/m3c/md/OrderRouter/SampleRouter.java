@@ -36,17 +36,16 @@ public class SampleRouter extends Thread implements Router {
                     int orderId = objectInputStream.readInt();
                     int clientId = objectInputStream.readInt();
                     int clientIdOrder = objectInputStream.readInt();
-                    int slideId = objectInputStream.readInt();
                     int quantityRemaining = objectInputStream.readInt();
                     Instrument instrument = (Instrument) objectInputStream.readObject();
 
                     // System.out.println("Order Router received method call for:" + methodName);
                     switch (methodName) {
                         case priceAtSize:
-                            priceAtSize(orderId, clientId, clientIdOrder, slideId, quantityRemaining, instrument);
+                            priceAtSize(orderId, clientId, clientIdOrder, quantityRemaining, instrument);
                             break;
                         case routeOrder:
-                            routeOrder(orderId, clientId, clientIdOrder, slideId, quantityRemaining, instrument);
+                            routeOrder(orderId, clientId, clientIdOrder, quantityRemaining, instrument);
                             break;
                     }
                 } else {
@@ -60,19 +59,18 @@ public class SampleRouter extends Thread implements Router {
     }
 
     @Override
-    public void priceAtSize(int orderId, int clientId, int clientOrderId, int sliceId, int size, Instrument i) throws IOException {
+    public void priceAtSize(int orderId, int clientId, int clientOrderId, int size, Instrument i) throws IOException {
         objectOutputStream = new ObjectOutputStream(omConn.getOutputStream());
         objectOutputStream.writeObject("bestPrice");
         objectOutputStream.writeInt(orderId);
         objectOutputStream.writeInt(clientId);
         objectOutputStream.writeInt(clientOrderId);
-        objectOutputStream.writeInt(sliceId);
         objectOutputStream.writeDouble(199 * RANDOM_NUM_GENERATOR.nextDouble());
         objectOutputStream.flush();
     }
 
     @Override
-    public void routeOrder(int orderId, int clientId, int clientOrderId, int sliceId, int size, Instrument i) throws IOException, InterruptedException { //MockI.show(""+order);
+    public void routeOrder(int orderId, int clientId, int clientOrderId, int size, Instrument i) throws IOException, InterruptedException { //MockI.show(""+order);
         System.out.println("Routing order - SampleRouter");
         int fillSize = RANDOM_NUM_GENERATOR.nextInt(size + 1);
         //TODO have this similar to the market price of the instrument
@@ -83,7 +81,6 @@ public class SampleRouter extends Thread implements Router {
         objectOutputStream.writeInt(orderId);
         objectOutputStream.writeInt(clientId);
         objectOutputStream.writeInt(clientOrderId);
-        objectOutputStream.writeInt(sliceId);
         objectOutputStream.writeInt(fillSize);
         objectOutputStream.writeDouble(fillPrice);
         objectOutputStream.flush();
