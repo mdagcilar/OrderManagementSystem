@@ -234,7 +234,9 @@ public class OrderManager {
         }
     }
 
-//    private void internalCross(int clientId, Order slicedOrder, int clientOrderId) throws IOException {
+//    private void internalCross(int clientId, Order order, int clientOrderId) throws IOException {
+//        Order slicedOrder = ordersHashMap.get(clientId).get(clientOrderId);
+//
 //        for (Map.Entry<Integer, Map<Integer, Order>> entry : ordersHashMap.entrySet()) {
 //            // if not the same order
 //            if (!(entry.getKey() == clientId)) {
