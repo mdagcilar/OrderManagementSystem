@@ -36,7 +36,6 @@ public class Trader extends Thread implements TradeScreen {
 
             while (true) {
                 if (0 < inputStream.available()) {
-                    // TODO: find a way to not create the object everytime
                     objectInputStream = new ObjectInputStream(inputStream);
                     // stored orderID and Order objects in variables, opposed to calling each time
                     api method = (api) objectInputStream.readObject();
@@ -53,12 +52,7 @@ public class Trader extends Thread implements TradeScreen {
                             price(orderID, order);
                             break;
                         case cross:
-                            //TODO: link to internal cross
                             cross(orderID, order);
-//                            objectInputStream.readInt();
-//                            objectInputStream.readObject();
-                            break;
-                        case fill:
 //                            objectInputStream.readInt();
 //                            objectInputStream.readObject();
                             break;
@@ -81,7 +75,6 @@ public class Trader extends Thread implements TradeScreen {
         objectOutputStream.writeObject(order);
     }
 
-    //TODO the order should go in a visual grid, but not needed for test purposes
     @Override
     public void newOrder(int id, Order order) throws IOException, InterruptedException {
         Thread.sleep(200);

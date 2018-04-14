@@ -8,7 +8,6 @@ import java.util.Random;
 
 import javax.net.ServerSocketFactory;
 
-import com.m3c.md.OrderRouter.Router;
 import com.m3c.md.Ref.Instrument;
 import com.m3c.md.Ref.Ric;
 
@@ -41,7 +40,7 @@ public class SampleRouter extends Thread implements Router {
                     int quantityRemaining = objectInputStream.readInt();
                     Instrument instrument = (Instrument) objectInputStream.readObject();
 
-                    System.out.println("Order Router received method call for:" + methodName);
+                    // System.out.println("Order Router received method call for:" + methodName);
                     switch (methodName) {
                         case priceAtSize:
                             priceAtSize(orderId, clientId, clientIdOrder, slideId, quantityRemaining, instrument);

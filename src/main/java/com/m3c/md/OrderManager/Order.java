@@ -5,10 +5,8 @@ import java.util.ArrayList;
 
 import com.m3c.md.Ref.Instrument;
 
-//TODO: add unique order ID through the constructor
 public class Order implements Serializable {
 
-    private long uniqueOrderID;
     private double initialMarketPrice;
     private Instrument instrument;
     private char orderStatus = 'A'; //orderStatus is Fix 39, 'A' is 'Pending New'
@@ -19,8 +17,6 @@ public class Order implements Serializable {
     public int bestPriceCount;
 
     double[] bestPrices;
-
-    short orderRouter;
 
     public Order(int clientId, int clientOrderID, Instrument instrument, int quantity) {
         this.clientOrderID = clientOrderID;

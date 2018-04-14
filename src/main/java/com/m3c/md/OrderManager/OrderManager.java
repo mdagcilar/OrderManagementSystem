@@ -270,8 +270,6 @@ public class OrderManager {
                             + ", Instrument:" + slice.getInstrument()
                             + ", Quantity: " + slice.getQuantity() + ", Quantity remaining: " + slice.getQuantityRemaining());
         }
-
-        sendOrderToTrader(orderId, slice, TradeScreen.api.fill);
     }
 
     private void routeOrder(int orderId, int clientId, int clientOrderId, int size) throws IOException {

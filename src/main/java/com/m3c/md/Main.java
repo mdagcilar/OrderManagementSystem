@@ -29,20 +29,22 @@ public class Main {
         //start sample clients
         (new MockClient("Client 1", 2000)).start();
         (new MockClient("Client 2", 2001)).start();
+//        (new MockClient("Client 3", 2001)).start();
 
         //start sample routers
         (new SampleRouter("Router LSE", 2010)).start();
-        //(new SampleRouter("Router BATE", 2011)).start();
+        (new SampleRouter("Router BATE", 2011)).start();
 
         (new Trader("Trader James", 2020)).start();
         //start order manager
-//        InetSocketAddress[] clients = {new InetSocketAddress("localhost", 2000)};
+
         InetSocketAddress[] clients = {new InetSocketAddress("localhost", 2000),
                 new InetSocketAddress("localhost", 2001)};
-        InetSocketAddress[] routers = {new InetSocketAddress("localhost", 2010)};
-//        InetSocketAddress[] routers = {new InetSocketAddress("localhost", 2010),
-//                new InetSocketAddress("localhost", 2011)};
+
+        InetSocketAddress[] routers = {new InetSocketAddress("localhost", 2010),
+                new InetSocketAddress("localhost", 2011)};
         InetSocketAddress trader = new InetSocketAddress("localhost", 2020);
+
         LiveMarketData liveMarketData = new SampleLiveMarketData();
         (new MockOrderManager("Order Manager", routers, clients, trader, liveMarketData)).start();
     }
@@ -68,12 +70,13 @@ class MockClient extends Thread {
             sampleClient.sendOrder(newOrderSingle);
             sampleClient.sendOrder(newOrderSingle3);
             sampleClient.sendOrder(newOrderSingle2);
-            //int id = sampleClient.sendOrder(null);
-            //TODO client.sendCancel(id);
+
             sampleClient.messageHandler();
 
+            //TODO client.sendCancel(id);
+
+
         } catch (IOException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
 
@@ -81,10 +84,9 @@ class MockClient extends Thread {
 }
 
 class MockOrderManager extends Thread {
-    InetSocketAddress[] clients;
-    InetSocketAddress[] routers;
-    InetSocketAddress trader;
-    LiveMarketData liveMarketData;
+    private InetSocketAddress[] clients, routers;
+    private InetSocketAddress trader;
+    private LiveMarketData liveMarketData;
 
     MockOrderManager(String name, InetSocketAddress[] routers, InetSocketAddress[] clients, InetSocketAddress trader, LiveMarketData liveMarketData) {
         this.clients = clients;

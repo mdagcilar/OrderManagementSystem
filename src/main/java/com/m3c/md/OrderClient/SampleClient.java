@@ -13,7 +13,6 @@ import com.m3c.md.Main;
 import com.m3c.md.OrderManager.Order;
 import com.m3c.md.Ref.Instrument;
 import com.m3c.md.Ref.Ric;
-//import com.sun.tools.corba.se.idl.constExpr.Or;
 
 public class SampleClient extends Mock implements Client {
     private static org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger(Main.class);
@@ -58,14 +57,14 @@ public class SampleClient extends Mock implements Client {
                     objectInputStream = new ObjectInputStream(omConn.getInputStream());
 
                     String fix = (String) objectInputStream.readObject();
-                    System.out.println(Thread.currentThread().getName() + " received fix message: " + fix);
+
                     String[] fixTags = fix.split(";");
                     int orderId = -1;
                     char MsgType;
 
                     //String[][] fixTagsValues=new String[fixTags.length][2];
-                    for (int i = 0; i < fixTags.length; i++) {
-                        String[] tag_value = fixTags[i].split("=");
+                    for (String fixTag : fixTags) {
+                        String[] tag_value = fixTag.split("=");
                         switch (tag_value[0]) {
                             case "11":
                                 orderId = Integer.parseInt(tag_value[1]);
@@ -81,7 +80,7 @@ public class SampleClient extends Mock implements Client {
                                 if (orderStatus == '0') {
                                     acceptOrderAck(orderId);
                                 } else if (orderStatus == '2') {
-                                    completeOrderAck(orderId);
+                                    completeOrderAck(orderId, fix);
                                 }
                                 break;
                         }
@@ -95,21 +94,17 @@ public class SampleClient extends Mock implements Client {
     }
 
     void newOrderAck(int OrderId) {
-//        logger.info(Thread.currentThread().getName() + " called newOrderAck, with OrderID: " + OrderId);
-        System.out.println((Thread.currentThread().getName() + " called newOrderAck, with OrderID: " + OrderId));
-        //do nothing, as not recording so much state in the NOS class at present
+        //System.out.println((Thread.currentThread().getName() + " called newOrderAck, with OrderID: " + OrderId));
     }
 
     void acceptOrderAck(int OrderId) {
-//        logger.info(Thread.currentThread().getName() + " called newOrderAck, with OrderID: " + OrderId);
-        System.out.println((Thread.currentThread().getName() + " called acceptOrderAck, with OrderID: " + OrderId));
-        //do nothing, as not recording so much state in the NOS class at present
+        //System.out.println((Thread.currentThread().getName() + " called acceptOrderAck, with OrderID: " + OrderId));
     }
 
-    void completeOrderAck(int OrderId) {
-//        logger.info(Thread.currentThread().getName() + " called newOrderAck, with OrderID: " + OrderId);
-        System.out.println((Thread.currentThread().getName() + " called completeOrderAck, with OrderID: " + OrderId));
-        //do nothing, as not recording so much state in the NOS class at present
+    void completeOrderAck(int OrderId, String fixMessage) {
+        System.out.println((Thread.currentThread().getName() +
+                " called completeOrderAck, with OrderID: " + OrderId +
+                " (FIX:" + fixMessage + ")"));
     }
 
 
