@@ -7,10 +7,6 @@ import com.m3c.md.Ref.Instrument;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-
-import java.util.ArrayList;
 
 public class OrderTest {
 
@@ -25,8 +21,8 @@ public class OrderTest {
     @Before
     public void setup() {
         testOrder = new Order(0, 0, testInstrument, 1000);
-        testOrder.slices.add(testSlice);
-        testOrder.slices.add(testSlice2);
+        testOrder.getSlices().add(testSlice);
+        testOrder.getSlices().add(testSlice2);
         testOrder.fills.add(testFill);
         when(testFill.getSize()).thenReturn(100);
     }
@@ -58,9 +54,9 @@ public class OrderTest {
 
     @Test
     public void newSliceTest() {
-        testOrder2.newSlice(500);
-        int newSliceIndex = testOrder2.slices.size() - 1;
-        Assert.assertEquals(500, testOrder2.slices.get(newSliceIndex).getQuantity());
+        testOrder2.createNewSlice(500);
+        int newSliceIndex = testOrder2.getSlices().size() - 1;
+        Assert.assertEquals(500, testOrder2.getSlices().get(newSliceIndex).getQuantity());
     }
 
 //    @Before

@@ -19,9 +19,7 @@ public class OrderManager {
     private static org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger(Main.class);
 
     private static LiveMarketData liveMarketData;
-    private Map<Integer, List<Map.Entry<Integer, Order>>> clientOrders;
-
-    List<Map.Entry<Integer, Order>> ordersList;
+    private Map<Integer, Map<Integer, Order>> ordersHashMap;
 
     //currently recording the number of new order messages we get. TODO why? use it for more?
     private int orderID = 0; //debugger will do this line as it gives state to the object
@@ -37,7 +35,7 @@ public class OrderManager {
                         LiveMarketData liveMarketData) throws IOException, ClassNotFoundException, InterruptedException {
         this.liveMarketData = liveMarketData;
 
-        clientOrders = new HashMap<>();
+        ordersHashMap = new HashMap<>();
         this.trader = connect(traderInetAddress);
 
         //for the router connections, copy the input array into our object field.
@@ -51,7 +49,6 @@ public class OrderManager {
         this.clients = new Socket[clientsInetAddresses.length];
         for (int j = 0; j < clientsInetAddresses.length; j++) {
             this.clients[j] = connect(clientsInetAddresses[j]);
-            ordersList = new ArrayList<>();
         }
 
         ObjectInputStream objectInputStream;
@@ -104,7 +101,7 @@ public class OrderManager {
 
 
                             // todo: change to get clientId - not orderId
-                            Order slice = clientOrders.get(clientId).get(clientOrderId).getValue();
+                            Order slice = ordersHashMap.get(clientId).get(clientOrderId);
 
                             slice.bestPrices[routerIndex] = objectInputStream.readDouble();
                             slice.bestPriceCount += 1;
@@ -174,15 +171,19 @@ public class OrderManager {
         // put the order in the hashmap
         Order order = new Order(clientId, clientOrderId, newOrderSingle.getInstrument(), newOrderSingle.getSize());
 
-        ordersList.add(new java.util.AbstractMap.SimpleEntry<>(clientOrderId, order));
-
-        clientOrders.put(clientId, ordersList);
+        if (ordersHashMap.containsKey(clientId)) {
+            ordersHashMap.get(clientId).put(clientOrderId, order);
+        } else {
+            Map<Integer, Order> innerMap = new HashMap<>();
+            innerMap.put(clientOrderId, order);
+            ordersHashMap.put(clientOrderId, innerMap);
+        }
 
         // send newOrderAck to client
         String message = "11=" + clientOrderId + ";35=A;39=A;";
         sendMessageToClient(clientId, message);
 
-        sendOrderToTrader(orderID, clientOrders.get(clientId).get(clientOrderId).getValue(), TradeScreen.api.newOrder);
+        sendOrderToTrader(orderID, order, TradeScreen.api.newOrder);
         orderID++;  // increase order number
     }
 
@@ -216,73 +217,76 @@ public class OrderManager {
             logger.error("Error sliceSize is bigger than remaining quantity to be filled on the order");
             return;
         }
-        order.newSlice(sliceSize);
-        int sliceId = order.slices.size() - 1;
-        Order slice = order.slices.get(sliceId);
+        order.createNewSlice(sliceSize);
+        int sliceId = order.getSlices().size() - 1;
+        Order slice = order.getClientOrder(sliceId);
 
-        internalCross(orderId, slice);
-        int sizeRemaining = order.slices.get(sliceId).getQuantityRemaining();
+//        internalCross(orderId, slice);
+        int sizeRemaining = slice.getQuantityRemaining();
 
         // if slice remaining is not satisfied by internalCross, route order outside.
         if (sizeRemaining > 0) {
-            routeOrder(orderId, sliceId, sizeRemaining, slice);
+            routeOrder(orderId, order.getClientOrderID(), sizeRemaining, slice);
         }
     }
 
-    private void internalCross(int orderID, Order slicedOrder) throws IOException {
-        for (Map.Entry<Integer, List<Map.Entry<Integer, Order>>> entry : clientOrders.entrySet()) {
-            // if not the same order
-            if (!(entry.getKey() == orderID)) {
-                Order matchingOrder = entry.getValue().get(0).getValue();
-                // if instrument matches and price is equal or less than client's order
-                if ((matchingOrder.getInstrument().toString().equals(slicedOrder.getInstrument().toString()))
-                        && (matchingOrder.getInitialMarketPrice() <= slicedOrder.getInitialMarketPrice())) {
-                    int sizeBefore = slicedOrder.getQuantityRemaining();
-                    slicedOrder.setInitialMarketPrice(matchingOrder.getInitialMarketPrice());
-                    slicedOrder.cross(matchingOrder);
-                    if (sizeBefore != slicedOrder.getQuantityRemaining()) {
-                        sendOrderToTrader(orderID, slicedOrder, TradeScreen.api.cross);
-                    }
-                }
-            }
-        }
-    }
+//    private void internalCross(int orderID, Order slicedOrder) throws IOException {
+//        for (Map.Entry<Integer, Map<Integer, Order>> entry : ordersHashMap.entrySet()) {
+//            // if not the same order
+//            if (!(entry.getKey() == orderID)) {
+//                Order matchingOrder = entry.getValue();
+//                // if instrument matches and price is equal or less than client's order
+//                if ((matchingOrder.getInstrument().toString().equals(slicedOrder.getInstrument().toString()))
+//                        && (matchingOrder.getInitialMarketPrice() <= slicedOrder.getInitialMarketPrice())) {
+//                    int sizeBefore = slicedOrder.getQuantityRemaining();
+//                    slicedOrder.setInitialMarketPrice(matchingOrder.getInitialMarketPrice());
+//                    slicedOrder.cross(matchingOrder);
+//                    if (sizeBefore != slicedOrder.getQuantityRemaining()) {
+//                        sendOrderToTrader(orderID, slicedOrder, TradeScreen.api.cross);
+//                    }
+//                }
+//            }
+//        }
+//    }
 
     private void crossComplete(int orderID, Order order) throws IOException {
-        int sliceId = order.slices.size() - 1;
-        Order slice = order.slices.get(sliceId);
-        int sizeFilled = order.slices.get(sliceId).sizeFilled();
+        int sliceId = order.getSlices().size() - 1;
+        Order slice = order.getClientOrder(sliceId);
+
+        int sizeFilled = slice.sizeFilled();
 
         newFill(orderID, order.getClientId(), order.getClientOrderID(), sliceId, sizeFilled, order.getInitialMarketPrice());
     }
 
     private void newFill(int orderId, int clientId, int clientOrderId, int sliceId, int size, double price) throws IOException {
-        Order order = clientOrders.get(clientId).get(clientOrderId).getValue();
+        // Returns the slice of an Order
+        Order slice = ordersHashMap.get(clientId).get(clientOrderId);
 
-        System.out.println("OrderID: " + orderId + ", clientOrderId: " + clientOrderId + ", Slice ID: " + sliceId);
-        order.slices.get(sliceId).createFill(size, price);      // sliced order status will change to '1' or '2'
+        System.out.println("OrderID: " + orderId + ", clientOrderId: " + clientOrderId + ", Slice ID: " + sliceId + " ------------ Are clientOrderId and sliceId always the same?");
+        //order.slices.get(sliceId).createFill(size, price);      // sliced order status will change to '1' or '2'
+        slice.createFill(size, price);
 
         // set order status of Parent Order.
-        if (order.isOrderSatisfied()) {
-            order.setOrderStatus('2');
-        } else if (order.isOrderPartiallySatisfied()) {
-            order.setOrderStatus('1');
+        if (slice.isOrderSatisfied()) {
+            slice.setOrderStatus('2');
+        } else if (slice.isOrderPartiallySatisfied()) {
+            slice.setOrderStatus('1');
         }
 
         // Send message to client, order status will tell the client weather it is partial/full
-        String message = "11=" + order.getClientOrderID() + ";35=0;39=" + order.getOrderStatus();
-        sendMessageToClient(order.getClientId(), message);
+        String message = "11=" + slice.getClientOrderID() + ";35=0;39=" + slice.getOrderStatus();
+        sendMessageToClient(slice.getClientId(), message);
 
         logger.info(
-                "Trade successful: ClientID:" + order.getClientId() + ", ClientOrderId: " + order.getClientOrderID()
-                        + ", Instrument:" + order.getInstrument()
-                        + ", Quantity: " + order.getQuantity() + ", Quantity remaining: " + order.getQuantityRemaining());
+                "Trade successful: ClientID:" + slice.getClientId() + ", ClientOrderId: " + slice.getClientOrderID()
+                        + ", Instrument:" + slice.getInstrument()
+                        + ", Quantity: " + slice.getQuantity() + ", Quantity remaining: " + slice.getQuantityRemaining());
 
-        if (order.getQuantityRemaining() == 0) { // complete fill
-            Database.write(order);
+        if (slice.getQuantityRemaining() == 0) { // complete fill
+            Database.write(slice);
         }
 
-        sendOrderToTrader(orderId, order, TradeScreen.api.fill);
+        sendOrderToTrader(orderId, slice, TradeScreen.api.fill);
     }
 
     private void routeOrder(int orderId, int sliceId, int size, Order order) throws IOException {
@@ -299,12 +303,10 @@ public class OrderManager {
         }
         //need to wait for these prices to come back before routing
 
-        for (Integer key : clientOrders.keySet()) {
-            for (Map.Entry<Integer, Order> entry : clientOrders.get(key)) {
-                entry.getValue().bestPrices = new double[orderRouters.length];
-                entry.getValue().bestPriceCount = 0;
-            }
-        }
+        Order slice = ordersHashMap.get(orderId).get(sliceId);
+
+        slice.bestPrices = new double[orderRouters.length];
+        slice.bestPriceCount = 0;
     }
 
     private void reallyRouteOrder(int sliceId, Order order) throws IOException {

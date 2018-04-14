@@ -28,7 +28,7 @@ public class Main {
 
         //start sample clients
         (new MockClient("Client 1", 2000)).start();
-        //(new MockClient("Client 2", 2001)).start();
+        (new MockClient("Client 2", 2001)).start();
 
         //start sample routers
         (new SampleRouter("Router LSE", 2010)).start();
@@ -36,9 +36,9 @@ public class Main {
 
         (new Trader("Trader James", 2020)).start();
         //start order manager
-        InetSocketAddress[] clients = {new InetSocketAddress("localhost", 2000)};
-//        InetSocketAddress[] clients = {new InetSocketAddress("localhost", 2000),
-//                new InetSocketAddress("localhost", 2001)};
+//        InetSocketAddress[] clients = {new InetSocketAddress("localhost", 2000)};
+        InetSocketAddress[] clients = {new InetSocketAddress("localhost", 2000),
+                new InetSocketAddress("localhost", 2001)};
         InetSocketAddress[] routers = {new InetSocketAddress("localhost", 2010)};
 //        InetSocketAddress[] routers = {new InetSocketAddress("localhost", 2010),
 //                new InetSocketAddress("localhost", 2011)};
@@ -59,10 +59,11 @@ class MockClient extends Thread {
     public void run() {
         try {
             SampleClient sampleClient = new SampleClient(port);
+            Random random = new Random();
 
-            NewOrderSingle newOrderSingle = new NewOrderSingle(500, 1000, new Instrument(new Ric("VOD.L")));
-            NewOrderSingle newOrderSingle3 = new NewOrderSingle(300, 5000, new Instrument(new Ric("BP.L")));
-            NewOrderSingle newOrderSingle2 = new NewOrderSingle(400, 1000, new Instrument(new Ric("VOD.L")));
+            NewOrderSingle newOrderSingle = new NewOrderSingle(random.nextInt(500), 1000, new Instrument(new Ric("VOD.L")));
+            NewOrderSingle newOrderSingle3 = new NewOrderSingle(random.nextInt(500), 5000, new Instrument(new Ric("BP.L")));
+            NewOrderSingle newOrderSingle2 = new NewOrderSingle(random.nextInt(500), 1000, new Instrument(new Ric("BT.L")));
 
             sampleClient.sendOrder(newOrderSingle);
             sampleClient.sendOrder(newOrderSingle3);

@@ -14,7 +14,7 @@ public class Order implements Serializable {
     private char orderStatus = 'A'; //orderStatus is Fix 39, 'A' is 'Pending New'
     private int quantity, clientId, clientOrderID;
 
-    public ArrayList<Order> slices;
+    private ArrayList<Order> slices;
     public ArrayList<Fill> fills;
     public int bestPriceCount;
 
@@ -78,6 +78,14 @@ public class Order implements Serializable {
         return getQuantityRemaining() < getQuantity();
     }
 
+    public ArrayList<Order> getSlices() {
+        return slices;
+    }
+
+    public Order getClientOrder(int sliceIndex) {
+        return slices.get(sliceIndex);
+    }
+
     public int sizeFilled() {
         int filledSoFar = 0;
         for (Fill f : fills) {
@@ -98,7 +106,7 @@ public class Order implements Serializable {
         return totalSizeOfSlices;
     }
 
-    public void newSlice(int sliceSize) {
+    public void createNewSlice(int sliceSize) {
         Order slice = new Order(clientId, clientOrderID, instrument, sliceSize);
         slice.setInitialMarketPrice(initialMarketPrice);
         slices.add(slice);
