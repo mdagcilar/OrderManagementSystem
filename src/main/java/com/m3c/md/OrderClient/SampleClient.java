@@ -46,31 +46,6 @@ public class SampleClient extends Mock implements Client {
         return id++;
     }
 
-    @Override
-    public void sendCancel(int idToCancel) {
-        Mock.show("sendCancel: id=" + idToCancel);
-        if (omConn.isConnected()) {
-            //OMconnection.sendMessage("cancel",idToCancel);
-        }
-    }
-
-    @Override
-    public void partialFill(Order order) {
-        Mock.show("" + order);
-    }
-
-    @Override
-    public void fullyFilled(Order order) {
-        Mock.show("" + order);
-        OUTGOING_ORDERS.remove(order.getClientOrderID());
-    }
-
-    @Override
-    public void cancelled(Order order) {
-        Mock.show("" + order);
-        OUTGOING_ORDERS.remove(order.getClientOrderID());
-    }
-
 
     @Override
     public void messageHandler() {
@@ -105,23 +80,12 @@ public class SampleClient extends Mock implements Client {
                                 int orderStatus = tag_value[1].charAt(0);
                                 if (orderStatus == '0') {
                                     acceptOrderAck(orderId);
-                                } else if (orderStatus == '1') {
-                                    partialOrderAck(orderId);
                                 } else if (orderStatus == '2') {
                                     completeOrderAck(orderId);
                                 }
                                 break;
                         }
                     }
-
-					/*message=connection.getMessage();
-					char type;
-					switch(type){
-						case 'C':cancelled(message);break;
-						case 'P':partialFill(message);break;
-						case 'F':fullyFilled(message);
-					}*/
-                    Mock.show("");
                 }
             }
         } catch (IOException | ClassNotFoundException e) {
@@ -142,16 +106,36 @@ public class SampleClient extends Mock implements Client {
         //do nothing, as not recording so much state in the NOS class at present
     }
 
-    void partialOrderAck(int OrderId) {
-//        logger.info(Thread.currentThread().getName() + " called newOrderAck, with OrderID: " + OrderId);
-        System.out.println((Thread.currentThread().getName() + " called partialOrderAck, with OrderID: " + OrderId));
-        //do nothing, as not recording so much state in the NOS class at present
-    }
-
     void completeOrderAck(int OrderId) {
 //        logger.info(Thread.currentThread().getName() + " called newOrderAck, with OrderID: " + OrderId);
         System.out.println((Thread.currentThread().getName() + " called completeOrderAck, with OrderID: " + OrderId));
         //do nothing, as not recording so much state in the NOS class at present
+    }
+
+
+    @Override
+    public void sendCancel(int idToCancel) {
+        Mock.show("sendCancel: id=" + idToCancel);
+        if (omConn.isConnected()) {
+            //OMconnection.sendMessage("cancel",idToCancel);
+        }
+    }
+
+    @Override
+    public void partialFill(Order order) {
+        Mock.show("" + order);
+    }
+
+    @Override
+    public void fullyFilled(Order order) {
+        Mock.show("" + order);
+        OUTGOING_ORDERS.remove(order.getClientOrderID());
+    }
+
+    @Override
+    public void cancelled(Order order) {
+        Mock.show("" + order);
+        OUTGOING_ORDERS.remove(order.getClientOrderID());
     }
 
 /*listen for connections

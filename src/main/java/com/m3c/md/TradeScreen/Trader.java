@@ -43,7 +43,8 @@ public class Trader extends Thread implements TradeScreen {
                     int orderID = objectInputStream.readInt();
                     Order order = (Order) objectInputStream.readObject();
 
-                    System.out.println(Thread.currentThread().getName() + " calling: " + method + ", with OrderID: " + orderID);
+                    System.out.println(Thread.currentThread().getName() + " calling:" +
+                            " " + method + ", with Order: [" + order.getClientId() + "," + order.getClientOrderID() + "]");
                     switch (method) {
                         case newOrder:
                             newOrder(orderID, order);
@@ -58,8 +59,6 @@ public class Trader extends Thread implements TradeScreen {
 //                            objectInputStream.readObject();
                             break;
                         case fill:
-                            System.out.println("I'm in fill");
-                            // TODO: send message to OrderManager to write to the db
 //                            objectInputStream.readInt();
 //                            objectInputStream.readObject();
                             break;
@@ -85,7 +84,7 @@ public class Trader extends Thread implements TradeScreen {
     //TODO the order should go in a visual grid, but not needed for test purposes
     @Override
     public void newOrder(int id, Order order) throws IOException, InterruptedException {
-        Thread.sleep(1000);
+        Thread.sleep(200);
 
         orders.put(id, order);
         acceptOrder(id, order);
@@ -100,18 +99,9 @@ public class Trader extends Thread implements TradeScreen {
         objectOutputStream.flush();
     }
 
-    private void completeOrder(int id) throws IOException {
-        objectOutputStream = new ObjectOutputStream(omConn.getOutputStream());
-        objectOutputStream.writeObject("completeOrder");
-        objectOutputStream.writeInt(id);
-        objectOutputStream.flush();
-    }
-
-    //TODO should update the trade screen
-    //TODO: Send price to the OutputStream
     @Override
     public void price(int id, Order order) throws InterruptedException, IOException {
-        Thread.sleep(1000);
+        Thread.sleep(200);
 
         if (order.getQuantity() > 100000) {     // Current threshold for spiting an order is 100,000.
             // slice order

@@ -75,7 +75,7 @@ public class SampleRouter extends Thread implements Router {
     @Override
     public void routeOrder(int orderId, int clientId, int clientOrderId, int sliceId, int size, Instrument i) throws IOException, InterruptedException { //MockI.show(""+order);
         System.out.println("Routing order - SampleRouter");
-        int fillSize = RANDOM_NUM_GENERATOR.nextInt(size);
+        int fillSize = RANDOM_NUM_GENERATOR.nextInt(size + 1);
         //TODO have this similar to the market price of the instrument
         double fillPrice = 199 * RANDOM_NUM_GENERATOR.nextDouble();
         Thread.sleep(42);
