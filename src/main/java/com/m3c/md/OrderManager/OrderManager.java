@@ -14,6 +14,7 @@ import com.m3c.md.Main;
 import com.m3c.md.OrderClient.NewOrderSingle;
 import com.m3c.md.OrderRouter.Router;
 import com.m3c.md.TradeScreen.TradeScreen;
+//import com.sun.tools.corba.se.idl.constExpr.Or;
 
 public class OrderManager {
     private static org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger(Main.class);
@@ -130,7 +131,7 @@ public class OrderManager {
                         acceptOrder(orderID, (Order) objectInputStream.readObject());
                         break;
                     case "sliceOrder":
-                        sliceOrder(orderID, objectInputStream.readInt(), (Order) objectInputStream.readObject());
+                        sliceOrder(orderID, objectInputStream.readInt(), objectInputStream.readInt(), objectInputStream.readInt());
                         break;
                     case "cross":
                         crossComplete(orderID, (Order) objectInputStream.readObject());
@@ -176,7 +177,7 @@ public class OrderManager {
         } else {
             Map<Integer, Order> innerMap = new HashMap<>();
             innerMap.put(clientOrderId, order);
-            ordersHashMap.put(clientOrderId, innerMap);
+            ordersHashMap.put(clientId, innerMap);
         }
 
         // send newOrderAck to client
@@ -210,31 +211,34 @@ public class OrderManager {
         objectOutputStream.flush();
     }
 
-    public void sliceOrder(int orderId, int sliceSize, Order order) throws IOException {
+    public void sliceOrder(int orderId, int sliceSize, int clientId, int clientOrderId) throws IOException {
+        Order order = ordersHashMap.get(clientId).get(clientOrderId);
+
         //slice the order. We have to check this is a valid quantity.
         //Order has a list of slices, and a list of fills, each slice is a childorder and each fill is associated with either a child order or the original order
         if (sliceSize > order.getQuantityRemaining() - order.totalSliceQuantity()) {
             logger.error("Error sliceSize is bigger than remaining quantity to be filled on the order");
             return;
         }
+
         order.createNewSlice(sliceSize);
         int sliceId = order.getSlices().size() - 1;
         Order slice = order.getClientOrder(sliceId);
 
-//        internalCross(orderId, slice);
+//        internalCross(clientId, slice, clientOrderId);
         int sizeRemaining = slice.getQuantityRemaining();
 
         // if slice remaining is not satisfied by internalCross, route order outside.
         if (sizeRemaining > 0) {
-            routeOrder(orderId, order.getClientOrderID(), sizeRemaining, slice);
+            routeOrder(orderId, clientId, clientOrderId, sizeRemaining);
         }
     }
 
-//    private void internalCross(int orderID, Order slicedOrder) throws IOException {
+//    private void internalCross(int clientId, Order slicedOrder, int clientOrderId) throws IOException {
 //        for (Map.Entry<Integer, Map<Integer, Order>> entry : ordersHashMap.entrySet()) {
 //            // if not the same order
-//            if (!(entry.getKey() == orderID)) {
-//                Order matchingOrder = entry.getValue();
+//            if (!(entry.getKey() == clientId)) {
+//                Order matchingOrder = entry.getValue().get(clientOrderId);
 //                // if instrument matches and price is equal or less than client's order
 //                if ((matchingOrder.getInstrument().toString().equals(slicedOrder.getInstrument().toString()))
 //                        && (matchingOrder.getInitialMarketPrice() <= slicedOrder.getInitialMarketPrice())) {
@@ -242,7 +246,7 @@ public class OrderManager {
 //                    slicedOrder.setInitialMarketPrice(matchingOrder.getInitialMarketPrice());
 //                    slicedOrder.cross(matchingOrder);
 //                    if (sizeBefore != slicedOrder.getQuantityRemaining()) {
-//                        sendOrderToTrader(orderID, slicedOrder, TradeScreen.api.cross);
+//                        sendOrderToTrader(clientId, slicedOrder, TradeScreen.api.cross);
 //                    }
 //                }
 //            }
@@ -262,7 +266,7 @@ public class OrderManager {
         // Returns the slice of an Order
         Order slice = ordersHashMap.get(clientId).get(clientOrderId);
 
-        System.out.println("OrderID: " + orderId + ", clientOrderId: " + clientOrderId + ", Slice ID: " + sliceId + " ------------ Are clientOrderId and sliceId always the same?");
+        System.out.println("OrderID: " + orderId + ", clientOrderId: " + clientOrderId);
         //order.slices.get(sliceId).createFill(size, price);      // sliced order status will change to '1' or '2'
         slice.createFill(size, price);
 
@@ -289,24 +293,25 @@ public class OrderManager {
         sendOrderToTrader(orderId, slice, TradeScreen.api.fill);
     }
 
-    private void routeOrder(int orderId, int sliceId, int size, Order order) throws IOException {
+    private void routeOrder(int orderId, int clientId, int clientOrderId, int size) throws IOException {
+        Order order = ordersHashMap.get(clientId).get(clientOrderId);
+
         for (Socket r : orderRouters) {
             ObjectOutputStream objectOutputStream = new ObjectOutputStream(r.getOutputStream());
             objectOutputStream.writeObject(Router.api.priceAtSize);
             objectOutputStream.writeInt(orderId);
+            //TODO: remove multiple clientOrderIds
             objectOutputStream.writeInt(order.getClientId());
             objectOutputStream.writeInt(order.getClientOrderID());
-            objectOutputStream.writeInt(sliceId);
+            objectOutputStream.writeInt(clientOrderId);
             objectOutputStream.writeInt(order.getQuantityRemaining());
             objectOutputStream.writeObject(order.getInstrument());
             objectOutputStream.flush();
         }
         //need to wait for these prices to come back before routing
 
-        Order slice = ordersHashMap.get(orderId).get(sliceId);
-
-        slice.bestPrices = new double[orderRouters.length];
-        slice.bestPriceCount = 0;
+        order.bestPrices = new double[orderRouters.length];
+        order.bestPriceCount = 0;
     }
 
     private void reallyRouteOrder(int sliceId, Order order) throws IOException {

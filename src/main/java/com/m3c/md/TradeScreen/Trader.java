@@ -128,7 +128,8 @@ public class Trader extends Thread implements TradeScreen {
         objectOutputStream.writeObject("sliceOrder");
         objectOutputStream.writeInt(id);
         objectOutputStream.writeInt(sliceSize);
-        objectOutputStream.writeObject(order);
+        objectOutputStream.writeInt(order.getClientId());
+        objectOutputStream.writeInt(order.getClientOrderID());
         objectOutputStream.flush();
     }
 }
