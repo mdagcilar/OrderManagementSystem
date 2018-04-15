@@ -83,8 +83,6 @@ public class Trader extends Thread implements TradeScreen {
 
     @Override
     public void acceptOrder(int id, Order order) throws InterruptedException, IOException {
-        Thread.sleep(200);
-
         objectOutputStream = new ObjectOutputStream(omConn.getOutputStream());
         objectOutputStream.writeObject("acceptOrder");
         objectOutputStream.writeInt(id);
@@ -94,8 +92,6 @@ public class Trader extends Thread implements TradeScreen {
 
     @Override
     public void price(int id, Order order) throws InterruptedException, IOException {
-        Thread.sleep(200);
-
         if (order.getQuantity() > 100000) {     // Current threshold for spiting an order is 100,000.
             // slice order
             sliceOrder(id, orders.get(id).getQuantityRemaining() / 2, order);
