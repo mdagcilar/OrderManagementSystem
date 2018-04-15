@@ -43,14 +43,11 @@ public class SampleClient extends Mock implements Client {
         return id++;
     }
 
-    private int allOrdersComplete(int orderId) throws IOException {
-        if (omConn.isConnected()) {
-            ObjectOutputStream objectOutputStream = new ObjectOutputStream(omConn.getOutputStream());
-            objectOutputStream.writeObject("allOrdersComplete");
-            objectOutputStream.writeInt(orderId);
-            objectOutputStream.flush();
-        }
-        return id++;
+    /**
+     * All orders for this client have been filled. Close the thread
+     */
+    private void closeClientThread() throws IOException {
+        Thread.currentThread().interrupt();
     }
 
 
@@ -87,10 +84,10 @@ public class SampleClient extends Mock implements Client {
                                     acceptOrderAck(orderId);
                                 } else if (orderStatus == '2') {
                                     completeOrderAck(orderId, fix);
-                                    clientsOutgoingOrder.remove(id);
+                                    clientsOutgoingOrder.remove(orderId);
 
                                     if (clientsOutgoingOrder.size() == 0) {
-                                        allOrdersComplete(id);
+                                        closeClientThread();
                                     }
                                 }
                                 break;

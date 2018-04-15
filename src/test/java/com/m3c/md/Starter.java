@@ -18,20 +18,14 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 
-public class Main {
-    private static org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger(Main.class);
+public class Starter {
+    private static org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger(Starter.class);
 
     public static void main(String[] args) {
         PropertyConfigurator.configure("src/main/resources/log4j.properties");
+        logger.info("Start");
 
-
-        InetSocketAddress[] clients = createClients(10);
-        //start sample clients
-//        (new MockClient("Client 1", 2000)).start();
-//        (new MockClient("Client 2", 2001)).start();
-//
-//        InetSocketAddress[] clients = {new InetSocketAddress("localhost", 2000),
-//                new InetSocketAddress("localhost", 2001)};
+        InetSocketAddress[] clients = createClients(3);
 
         //start sample routers
         (new SampleRouter("Router LSE", 2010)).start();
@@ -50,7 +44,8 @@ public class Main {
 
     /**
      * starts clients and returns a InetSocketAddress array
-     * @param numberOfClients -
+     *
+     * @param numberOfClients - The number of clients to create
      * @return netSocketAddress array
      */
     private static InetSocketAddress[] createClients(int numberOfClients) {
@@ -78,11 +73,11 @@ class MockClient extends Thread {
             SampleClient sampleClient = new SampleClient(port);
             Random random = new Random();
 
-            NewOrderSingle newOrderSingle = new NewOrderSingle(random.nextInt(500), 1000, new Instrument(new Ric("VOD.L")));
-            NewOrderSingle newOrderSingle2 = new NewOrderSingle(random.nextInt(500), 1000, new Instrument(new Ric("BT.L")));
-            NewOrderSingle newOrderSingle3 = new NewOrderSingle(random.nextInt(500), 5000, new Instrument(new Ric("BP.L")));
-            NewOrderSingle newOrderSingle4 = new NewOrderSingle(random.nextInt(500), 5000, new Instrument(new Ric("BP.L")));
-            NewOrderSingle newOrderSingle5 = new NewOrderSingle(random.nextInt(500), 5000, new Instrument(new Ric("VOD.L")));
+            NewOrderSingle newOrderSingle = new NewOrderSingle(random.nextInt(50), 1000, new Instrument(new Ric("VOD.L")));
+            NewOrderSingle newOrderSingle2 = new NewOrderSingle(random.nextInt(100), 1000, new Instrument(new Ric("BT.L")));
+            NewOrderSingle newOrderSingle3 = new NewOrderSingle(random.nextInt(20), 5000, new Instrument(new Ric("BP.L")));
+            NewOrderSingle newOrderSingle4 = new NewOrderSingle(random.nextInt(40), 5000, new Instrument(new Ric("BP.L")));
+            NewOrderSingle newOrderSingle5 = new NewOrderSingle(random.nextInt(200), 5000, new Instrument(new Ric("VOD.L")));
 
             sampleClient.sendOrder(newOrderSingle);
             sampleClient.sendOrder(newOrderSingle2);

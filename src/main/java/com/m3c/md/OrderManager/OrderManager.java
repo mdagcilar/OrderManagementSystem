@@ -7,7 +7,6 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.*;
 
-import com.m3c.md.Database.Database;
 import com.m3c.md.LiveMarketData.LiveMarketData;
 import com.m3c.md.OrderClient.NewOrderSingle;
 import com.m3c.md.OrderRouter.Router;
@@ -20,7 +19,7 @@ public class OrderManager {
     private Map<Integer, Map<Integer, Order>> ordersHashMap;
 
     //currently recording the number of new order messages we get. TODO why? use it for more?
-    private int orderID = 0; //debugger will do this line as it gives state to the object
+    private int orderID; //debugger will do this line as it gives state to the object
     private Socket[] orderRouters; //debugger will skip these lines as they dissapear at compile time into 'the object'/stack
     private Socket[] clients;
     private Socket trader;
@@ -72,10 +71,6 @@ public class OrderManager {
                         case "newOrderSingle":
                             newOrder(clientIndex, orderID, (NewOrderSingle) objectInputStream.readObject());
                             break;
-                        case "allOrdersComplete":
-                            closeClientConnection(orderID);
-                            break;
-                        //TODO create a default case which errors with "Unknown message type"+...
                     }
                 }
             }
@@ -180,20 +175,6 @@ public class OrderManager {
         orderID++;  // increase order number
     }
 
-    /**
-     * All of a clients orders have been satisfied.
-     * Close the Socket connection
-     */
-    private void closeClientConnection(int clientId) {
-        try {
-            clients[clientId].close();
-        } catch (IOException e) {
-            logger.error("Error attempting to close client:" + clientId + "'s connection");
-            e.printStackTrace();
-        }
-    }
-
-
     private void acceptOrder(int orderId, Order order) throws IOException {
         if (order.getOrderStatus() != 'A') { //Pending New
             logger.error("Error accepting order that has already been accepted");
@@ -270,7 +251,7 @@ public class OrderManager {
 //                            + ", Instrument:" + slice.getInstrument()
 //                            + ", Quantity: " + slice.getQuantity() + ", Quantity remaining: " + slice.getQuantityRemaining());
         } else {
-            Database.insertTradeToDb(String.valueOf(clientId), String.valueOf(clientOrderId), slice.getInstrument().toString(), slice.getQuantity(), slice.getInitialMarketPrice());
+            //Database.insertTradeToDb(String.valueOf(clientId), String.valueOf(clientOrderId), slice.getInstrument().toString(), slice.getQuantity(), slice.getInitialMarketPrice());
 
             sendMessageToClient(slice.getClientId(), message);      // send complete order acknowledgement to client
             logger.info(
