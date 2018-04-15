@@ -9,15 +9,7 @@ public class Ric implements Serializable {
         this.ric = ric;
     }
 
-    public String getRic(){
+    public String getRic() {
         return ric;
-    }
-
-    public String getEx() {
-        return ric.split(".")[1];
-    }
-
-    public String getCompany() {
-        return ric.split(".")[0];
     }
 }

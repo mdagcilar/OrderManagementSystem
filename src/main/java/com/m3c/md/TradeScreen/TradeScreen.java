@@ -9,7 +9,7 @@ public interface TradeScreen {
 
     void newOrder(int id, Order order) throws IOException, InterruptedException;
 
-    void acceptOrder(int id, Order order) throws IOException;
+    void acceptOrder(int id, Order order) throws IOException, InterruptedException;
 
     void sliceOrder(int id, int sliceSize, Order order) throws IOException;
 

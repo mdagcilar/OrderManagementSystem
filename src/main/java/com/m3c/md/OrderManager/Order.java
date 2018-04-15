@@ -128,50 +128,45 @@ public class Order implements Serializable {
         }
     }
 
-    void cross(Order matchingOrder) {
-        //pair slices first and then parent
-        for (Order slice : slices) {
-            if (slice.getQuantityRemaining() == 0) continue;
-            //TODO could optimise this to not start at the beginning every time
-            for (Order matchingSlice : matchingOrder.slices) {
-                int matchingSize = matchingSlice.getQuantityRemaining();
-                if (matchingSize == 0) continue;
-                int remainingSize = slice.getQuantityRemaining();
-                if (remainingSize <= matchingSize) {
-                    slice.createFill(remainingSize, initialMarketPrice);
-                    matchingSlice.createFill(remainingSize, initialMarketPrice);
-                    break;
-                }
-                //sze>msze
-                slice.createFill(matchingSize, initialMarketPrice);
-                matchingSlice.createFill(matchingSize, initialMarketPrice);
-            }
-            //no point continuing if we didn't fill this slice, as we must already have fully filled the matchingOrder
-            if (slice.getQuantityRemaining() > 0) break;
-        }
-
-        if (getQuantityRemaining() > 0) {
-            for (Order matchingSlice : matchingOrder.slices) {
-                int matchingSize = matchingSlice.getQuantityRemaining();
-                if (matchingSize == 0) continue;
-                int remainingSize = getQuantityRemaining();
-                if (remainingSize <= matchingSize) {
-                    createFill(remainingSize, initialMarketPrice);
-                    matchingSlice.createFill(remainingSize, initialMarketPrice);
-                    break;
-                }
-                //sze>msze
-                createFill(matchingSize, initialMarketPrice);
-                matchingSlice.createFill(matchingSize, initialMarketPrice);
-            }
-        }
-    }
-
-    void cancel() {
-        //state=cancelled
-    }
-}
-
-class Basket {
-    Order[] orders;
+//    void cross(Order matchingOrder) {
+//        //pair slices first and then parent
+//        for (Order slice : slices) {
+//            if (slice.getQuantityRemaining() == 0) continue;
+//            //TODO could optimise this to not start at the beginning every time
+//            for (Order matchingSlice : matchingOrder.slices) {
+//                int matchingSize = matchingSlice.getQuantityRemaining();
+//                if (matchingSize == 0) continue;
+//                int remainingSize = slice.getQuantityRemaining();
+//                if (remainingSize <= matchingSize) {
+//                    slice.createFill(remainingSize, initialMarketPrice);
+//                    matchingSlice.createFill(remainingSize, initialMarketPrice);
+//                    break;
+//                }
+//                //sze>msze
+//                slice.createFill(matchingSize, initialMarketPrice);
+//                matchingSlice.createFill(matchingSize, initialMarketPrice);
+//            }
+//            //no point continuing if we didn't fill this slice, as we must already have fully filled the matchingOrder
+//            if (slice.getQuantityRemaining() > 0) break;
+//        }
+//
+//        if (getQuantityRemaining() > 0) {
+//            for (Order matchingSlice : matchingOrder.slices) {
+//                int matchingSize = matchingSlice.getQuantityRemaining();
+//                if (matchingSize == 0) continue;
+//                int remainingSize = getQuantityRemaining();
+//                if (remainingSize <= matchingSize) {
+//                    createFill(remainingSize, initialMarketPrice);
+//                    matchingSlice.createFill(remainingSize, initialMarketPrice);
+//                    break;
+//                }
+//                //sze>msze
+//                createFill(matchingSize, initialMarketPrice);
+//                matchingSlice.createFill(matchingSize, initialMarketPrice);
+//            }
+//        }
+//    }
+//    void cancel() {
+//        //state=cancelled
+//    }
 }

@@ -42,8 +42,8 @@ public class Trader extends Thread implements TradeScreen {
                     int orderID = objectInputStream.readInt();
                     Order order = (Order) objectInputStream.readObject();
 
-                    System.out.println(Thread.currentThread().getName() + " calling:" +
-                            " " + method + ", with Order: [" + order.getClientId() + "," + order.getClientOrderID() + "]");
+//                    System.out.println(Thread.currentThread().getName() + " calling:" +
+//                            " " + method + ", with Order: [" + order.getClientId() + "," + order.getClientOrderID() + "]");
                     switch (method) {
                         case newOrder:
                             newOrder(orderID, order);
@@ -77,14 +77,14 @@ public class Trader extends Thread implements TradeScreen {
 
     @Override
     public void newOrder(int id, Order order) throws IOException, InterruptedException {
-        Thread.sleep(200);
-
         orders.put(id, order);
         acceptOrder(id, order);
     }
 
     @Override
-    public void acceptOrder(int id, Order order) throws IOException {
+    public void acceptOrder(int id, Order order) throws InterruptedException, IOException {
+        Thread.sleep(200);
+
         objectOutputStream = new ObjectOutputStream(omConn.getOutputStream());
         objectOutputStream.writeObject("acceptOrder");
         objectOutputStream.writeInt(id);

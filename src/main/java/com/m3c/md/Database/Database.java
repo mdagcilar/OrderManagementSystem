@@ -17,11 +17,7 @@ public class Database {
     private static final String PORT_NUMBER = "1521";
     private static final String SID = "TODOWIN";
 
-    private static final String DB_HOSTNAME = "jdbc:oracle:thin:@//" +
-            HOST_NAME
-            + ":"
-            + PORT_NUMBER
-            + "/" + SID;
+    private static final String DB_HOSTNAME = "jdbc:oracle:thin:@//" + HOST_NAME + ":" + PORT_NUMBER + "/" + SID;
 
     /**
      * @return Get the current connection, if not create a connection
@@ -39,10 +35,8 @@ public class Database {
     private static Connection connect() {
         try {
             conn = DriverManager.getConnection(DB_HOSTNAME, USER_NAME, PASSWORD);
-            System.out.println("Connection to database on " + HOST_NAME + " successful:\n");
         } catch (Exception e) {
-            System.out.println(DB_HOSTNAME);
-            System.out.println("Connection to database failed: " + e.getMessage());
+            logger.error("Connection to database failed: " + e.getMessage());
         }
         return conn;
     }
@@ -69,7 +63,6 @@ public class Database {
 
         } catch (SQLException e) {
             logger.debug("Error writing the trade to the database " + e.getMessage());
-            System.out.println("insertTradeToDb() failed");
         }
     }
 }

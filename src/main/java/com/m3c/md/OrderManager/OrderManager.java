@@ -65,7 +65,7 @@ public class OrderManager {
                     String method = (String) objectInputStream.readObject();
                     int orderID = objectInputStream.readInt();
 
-                    System.out.println(Thread.currentThread().getName() + " calling " + method + ", with OrderID: " + orderID);
+//                    System.out.println(Thread.currentThread().getName() + " calling " + method + ", with OrderID: " + orderID);
 
                     switch (method) { //determine the type of message and process it
                         //call the newOrder message with the clientId and the message (clientMessageId,NewOrderSingle)
@@ -92,8 +92,8 @@ public class OrderManager {
                     int clientId = objectInputStream.readInt();
                     int clientOrderId = objectInputStream.readInt();
 
-                    System.out.println(Thread.currentThread().getName() + " calling " + method +
-                            ", with Order: [" + clientId + "," + clientOrderId + "]");
+//                    System.out.println(Thread.currentThread().getName() + " calling " + method +
+//                            ", with Order: [" + clientId + "," + clientOrderId + "]");
 
                     switch (method) {
                         case "bestPrice":
@@ -119,7 +119,7 @@ public class OrderManager {
                 String method = (String) objectInputStream.readObject();
                 int orderID = objectInputStream.readInt();
 
-                System.out.println((Thread.currentThread().getName() + " calling " + method + ", with OrderID: " + orderID));
+//                System.out.println((Thread.currentThread().getName() + " calling " + method + ", with OrderID: " + orderID));
                 switch (method) {
                     case "acceptOrder":
                         acceptOrder(orderID, (Order) objectInputStream.readObject());
@@ -143,7 +143,6 @@ public class OrderManager {
             try {
                 Socket socket = new Socket(location.getHostName(), location.getPort());
                 socket.setKeepAlive(true);
-                logger.debug("Socket connection successful - " + location);
                 return socket;
             } catch (IOException e) {
                 Thread.sleep(1000);
@@ -264,6 +263,12 @@ public class OrderManager {
         // if slice still has some remaining size, slice it again
         if (slice.getQuantityRemaining() != 0) {
             sliceOrder(orderId, slice.getQuantityRemaining(), clientId, clientOrderId);
+
+            // uncomment this code block to show partial orders being filled and interleaved
+//            logger.info(
+//                    "Trade Complete: ClientID:" + slice.getClientId() + ", ClientOrderId: " + slice.getClientOrderID()
+//                            + ", Instrument:" + slice.getInstrument()
+//                            + ", Quantity: " + slice.getQuantity() + ", Quantity remaining: " + slice.getQuantityRemaining());
         } else {
             Database.insertTradeToDb(String.valueOf(clientId), String.valueOf(clientOrderId), slice.getInstrument().toString(), slice.getQuantity(), slice.getInitialMarketPrice());
 

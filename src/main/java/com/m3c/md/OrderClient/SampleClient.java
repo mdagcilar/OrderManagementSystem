@@ -9,30 +9,29 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 
-import com.m3c.md.Main;
 import com.m3c.md.OrderManager.Order;
 import com.m3c.md.Ref.Instrument;
 import com.m3c.md.Ref.Ric;
 
 public class SampleClient extends Mock implements Client {
-    private static org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger(Main.class);
+    private static org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger(SampleClient.class);
 
     private static final Random RANDOM_NUM_GENERATOR = new Random();
     private static final Instrument[] INSTRUMENTS = {new Instrument(new Ric("VOD.L")), new Instrument(new Ric("BP.L")), new Instrument(new Ric("BT.L"))};
-    private static final Map<Integer, NewOrderSingle> OUTGOING_ORDERS = new HashMap(); //queue for outgoing orders
+    private final Map<Integer, NewOrderSingle> clientsOutgoingOrder = new HashMap();
     private int id = 0; //message id number
     private Socket omConn; //connection to order manager
 
     public SampleClient(int port) throws IOException {
         //OM will connect to us
         omConn = new ServerSocket(port).accept();
-        System.out.println("OM connected to client port " + port);
     }
 
     @Override
     public int sendOrder(NewOrderSingle newOrderSingle) throws IOException {
         Mock.show("sendOrder: id=" + id + " quantity=" + newOrderSingle.getSize() + " instrument=" + newOrderSingle.getInstrument().toString());
-        OUTGOING_ORDERS.put(id, newOrderSingle);
+
+        clientsOutgoingOrder.put(id, newOrderSingle);
         if (omConn.isConnected()) {
             ObjectOutputStream objectOutputStream = new ObjectOutputStream(omConn.getOutputStream());
             objectOutputStream.writeObject("newOrderSingle");
@@ -44,7 +43,7 @@ public class SampleClient extends Mock implements Client {
         return id++;
     }
 
-    public int allOrdersComplete(int orderId) throws IOException {
+    private int allOrdersComplete(int orderId) throws IOException {
         if (omConn.isConnected()) {
             ObjectOutputStream objectOutputStream = new ObjectOutputStream(omConn.getOutputStream());
             objectOutputStream.writeObject("allOrdersComplete");
@@ -88,9 +87,9 @@ public class SampleClient extends Mock implements Client {
                                     acceptOrderAck(orderId);
                                 } else if (orderStatus == '2') {
                                     completeOrderAck(orderId, fix);
-                                    OUTGOING_ORDERS.remove(id);
+                                    clientsOutgoingOrder.remove(id);
 
-                                    if (OUTGOING_ORDERS.size() == 0) {
+                                    if (clientsOutgoingOrder.size() == 0) {
                                         allOrdersComplete(id);
                                     }
                                 }
@@ -100,20 +99,19 @@ public class SampleClient extends Mock implements Client {
                 }
             }
         } catch (IOException | ClassNotFoundException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            logger.error("Error ClassNotFoundException " + e.getMessage());
         }
     }
 
-    void newOrderAck(int OrderId) {
+    private void newOrderAck(int OrderId) {
         //System.out.println((Thread.currentThread().getName() + " called newOrderAck, with OrderID: " + OrderId));
     }
 
-    void acceptOrderAck(int OrderId) {
+    private void acceptOrderAck(int OrderId) {
         //System.out.println((Thread.currentThread().getName() + " called acceptOrderAck, with OrderID: " + OrderId));
     }
 
-    void completeOrderAck(int OrderId, String fixMessage) {
+    private void completeOrderAck(int OrderId, String fixMessage) {
         System.out.println((Thread.currentThread().getName() +
                 " called completeOrderAck, with OrderID: " + OrderId +
                 " (FIX:" + fixMessage + ")"));
@@ -136,12 +134,12 @@ public class SampleClient extends Mock implements Client {
     @Override
     public void fullyFilled(Order order) {
         Mock.show("" + order);
-        OUTGOING_ORDERS.remove(order.getClientOrderID());
+        clientsOutgoingOrder.remove(order.getClientOrderID());
     }
 
     @Override
     public void cancelled(Order order) {
         Mock.show("" + order);
-        OUTGOING_ORDERS.remove(order.getClientOrderID());
+        clientsOutgoingOrder.remove(order.getClientOrderID());
     }
 }
