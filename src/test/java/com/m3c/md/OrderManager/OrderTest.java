@@ -20,8 +20,8 @@ public class OrderTest {
     private Fill testFill = mock(Fill.class);
     private Fill testFill2 = mock(Fill.class);
     public Instrument testInstrument = mock(Instrument.class);
-    private Order testSlice = new Order(0,0, testInstrument, 100);
-    private Order testSlice2 = new Order(0,0, testInstrument, 200);
+    private Order testSlice = new Order(0, 0, testInstrument, 100);
+    private Order testSlice2 = new Order(0, 0, testInstrument, 200);
 
     @Before
     public void setup() {
@@ -42,7 +42,6 @@ public class OrderTest {
         //testOrder = new Order(0,0,testInstrument, 1000);
         assertEquals('A', testOrder.getOrderStatus());
     }
-
 
 
     @Test
@@ -68,7 +67,7 @@ public class OrderTest {
 
     @Test
     public void getQuantity() {
-        testOrder = new Order(0,0,testInstrument, 1000);
+        testOrder = new Order(0, 0, testInstrument, 1000);
         assertEquals(1000, testOrder.getQuantity());
     }
 
@@ -87,10 +86,10 @@ public class OrderTest {
 
     @Test
     public void isOrderPartiallySatisfied() {
-            testOrder = new Order(0, 0, testInstrument, 1000);
-            testOrder.fills.add(testFill);
-            when(testFill.getSize()).thenReturn(800);
-            Assert.assertTrue(testOrder.isOrderPartiallySatisfied());
+        testOrder = new Order(0, 0, testInstrument, 1000);
+        testOrder.fills.add(testFill);
+        when(testFill.getSize()).thenReturn(800);
+        Assert.assertTrue(testOrder.isOrderPartiallySatisfied());
     }
 
     @Test
@@ -116,7 +115,7 @@ public class OrderTest {
 
     @Test
     public void price() {
-        testOrder = new Order(0,0,testInstrument, 1000);
+        testOrder = new Order(0, 0, testInstrument, 1000);
         testOrder.fills.add(testFill);
         testOrder.fills.add(testFill2);
         when(testFill.getPrice()).thenReturn((double) 200);
@@ -127,7 +126,7 @@ public class OrderTest {
 
     @Before
     public void newSetup() {
-        testOrder2 = new Order(0,0, testInstrument, 1000);
+        testOrder2 = new Order(0, 0, testInstrument, 1000);
     }
 
     @Test
@@ -139,17 +138,8 @@ public class OrderTest {
     }
 
     @Test
-    public void cross() {
-    }
-
-    @Test
-    public void cancel() {
-    }
-
-    @Test
     public void setOrderStatus() {
         testOrder.setOrderStatus('1');
         assertEquals('1', testOrder.getOrderStatus());
     }
-
 }

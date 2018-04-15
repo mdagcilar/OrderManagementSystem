@@ -24,8 +24,6 @@ public class Main {
     public static void main(String[] args) {
         PropertyConfigurator.configure("src/main/resources/log4j.properties");
 
-        logger.info("TEST: this program tests ordermanager");
-
         //start sample clients
         (new MockClient("Client 1", 2000)).start();
         (new MockClient("Client 2", 2001)).start();
