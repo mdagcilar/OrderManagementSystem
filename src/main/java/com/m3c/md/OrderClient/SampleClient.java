@@ -47,7 +47,7 @@ public class SampleClient extends Mock implements Client {
      * All orders for this client have been filled. Close the thread
      */
     private void closeClientThread() throws IOException {
-        Thread.currentThread().interrupt();
+        Thread.currentThread().stop();
     }
 
 
