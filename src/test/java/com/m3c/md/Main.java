@@ -24,10 +24,14 @@ public class Main {
     public static void main(String[] args) {
         PropertyConfigurator.configure("src/main/resources/log4j.properties");
 
+
+        InetSocketAddress[] clients = createClients(10);
         //start sample clients
-        (new MockClient("Client 1", 2000)).start();
-        (new MockClient("Client 2", 2001)).start();
-//        (new MockClient("Client 3", 2001)).start();
+//        (new MockClient("Client 1", 2000)).start();
+//        (new MockClient("Client 2", 2001)).start();
+//
+//        InetSocketAddress[] clients = {new InetSocketAddress("localhost", 2000),
+//                new InetSocketAddress("localhost", 2001)};
 
         //start sample routers
         (new SampleRouter("Router LSE", 2010)).start();
@@ -36,9 +40,6 @@ public class Main {
         (new Trader("Trader James", 2020)).start();
         //start order manager
 
-        InetSocketAddress[] clients = {new InetSocketAddress("localhost", 2000),
-                new InetSocketAddress("localhost", 2001)};
-
         InetSocketAddress[] routers = {new InetSocketAddress("localhost", 2010),
                 new InetSocketAddress("localhost", 2011)};
         InetSocketAddress trader = new InetSocketAddress("localhost", 2020);
@@ -46,6 +47,22 @@ public class Main {
         LiveMarketData liveMarketData = new SampleLiveMarketData();
         (new MockOrderManager("Order Manager", routers, clients, trader, liveMarketData)).start();
     }
+
+    /**
+     * starts clients and returns a InetSocketAddress array
+     * @param numberOfClients -
+     * @return netSocketAddress array
+     */
+    private static InetSocketAddress[] createClients(int numberOfClients) {
+        InetSocketAddress[] clients = new InetSocketAddress[numberOfClients];
+
+        for (int i = 0; i < numberOfClients; i++) {
+            new MockClient("Client " + i, 2021 + i).start();
+            clients[i] = new InetSocketAddress("localhost", 2021 + i);
+        }
+        return clients;
+    }
+
 }
 
 class MockClient extends Thread {
@@ -62,12 +79,16 @@ class MockClient extends Thread {
             Random random = new Random();
 
             NewOrderSingle newOrderSingle = new NewOrderSingle(random.nextInt(500), 1000, new Instrument(new Ric("VOD.L")));
-            NewOrderSingle newOrderSingle3 = new NewOrderSingle(random.nextInt(500), 5000, new Instrument(new Ric("BP.L")));
             NewOrderSingle newOrderSingle2 = new NewOrderSingle(random.nextInt(500), 1000, new Instrument(new Ric("BT.L")));
+            NewOrderSingle newOrderSingle3 = new NewOrderSingle(random.nextInt(500), 5000, new Instrument(new Ric("BP.L")));
+            NewOrderSingle newOrderSingle4 = new NewOrderSingle(random.nextInt(500), 5000, new Instrument(new Ric("BP.L")));
+            NewOrderSingle newOrderSingle5 = new NewOrderSingle(random.nextInt(500), 5000, new Instrument(new Ric("VOD.L")));
 
             sampleClient.sendOrder(newOrderSingle);
-            sampleClient.sendOrder(newOrderSingle3);
             sampleClient.sendOrder(newOrderSingle2);
+            sampleClient.sendOrder(newOrderSingle3);
+            sampleClient.sendOrder(newOrderSingle4);
+            sampleClient.sendOrder(newOrderSingle5);
 
             sampleClient.messageHandler();
 
