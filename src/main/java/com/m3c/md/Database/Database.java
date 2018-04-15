@@ -72,8 +72,4 @@ public class Database {
             System.out.println("insertTradeToDb() failed");
         }
     }
-
-    public static void write(Object o) {
-
-    }
 }

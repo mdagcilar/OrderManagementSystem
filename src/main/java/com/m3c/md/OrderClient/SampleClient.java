@@ -31,7 +31,6 @@ public class SampleClient extends Mock implements Client {
 
     @Override
     public int sendOrder(NewOrderSingle newOrderSingle) throws IOException {
-
         Mock.show("sendOrder: id=" + id + " quantity=" + newOrderSingle.getSize() + " instrument=" + newOrderSingle.getInstrument().toString());
         OUTGOING_ORDERS.put(id, newOrderSingle);
         if (omConn.isConnected()) {
@@ -45,6 +44,16 @@ public class SampleClient extends Mock implements Client {
         return id++;
     }
 
+    public int allOrdersComplete(int orderId) throws IOException {
+        if (omConn.isConnected()) {
+            ObjectOutputStream objectOutputStream = new ObjectOutputStream(omConn.getOutputStream());
+            objectOutputStream.writeObject("allOrdersComplete");
+            objectOutputStream.writeInt(orderId);
+            objectOutputStream.flush();
+        }
+        return id++;
+    }
+
 
     @Override
     public void messageHandler() {
@@ -52,7 +61,6 @@ public class SampleClient extends Mock implements Client {
         ObjectInputStream objectInputStream;
         try {
             while (true) {
-                //objectInputStream.wait(); //this throws an exception!!
                 while (0 < omConn.getInputStream().available()) {
                     objectInputStream = new ObjectInputStream(omConn.getInputStream());
 
@@ -62,7 +70,6 @@ public class SampleClient extends Mock implements Client {
                     int orderId = -1;
                     char MsgType;
 
-                    //String[][] fixTagsValues=new String[fixTags.length][2];
                     for (String fixTag : fixTags) {
                         String[] tag_value = fixTag.split("=");
                         switch (tag_value[0]) {
@@ -81,6 +88,11 @@ public class SampleClient extends Mock implements Client {
                                     acceptOrderAck(orderId);
                                 } else if (orderStatus == '2') {
                                     completeOrderAck(orderId, fix);
+                                    OUTGOING_ORDERS.remove(id);
+
+                                    if (OUTGOING_ORDERS.size() == 0) {
+                                        allOrdersComplete(id);
+                                    }
                                 }
                                 break;
                         }
@@ -132,8 +144,4 @@ public class SampleClient extends Mock implements Client {
         Mock.show("" + order);
         OUTGOING_ORDERS.remove(order.getClientOrderID());
     }
-
-/*listen for connections
-once order manager has connected, then send and cancel orders randomly
-listen for messages from order manager and print them to stdout.*/
 }

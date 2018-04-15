@@ -6,18 +6,15 @@ import java.io.ObjectOutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.*;
-//import java.util.IntSummaryStatistics;
 
 import com.m3c.md.Database.Database;
 import com.m3c.md.LiveMarketData.LiveMarketData;
-import com.m3c.md.Main;
 import com.m3c.md.OrderClient.NewOrderSingle;
 import com.m3c.md.OrderRouter.Router;
 import com.m3c.md.TradeScreen.TradeScreen;
-//import com.sun.tools.corba.se.idl.constExpr.Or;
 
 public class OrderManager {
-    private static org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger(Main.class);
+    private static org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger(OrderManager.class);
 
     private static LiveMarketData liveMarketData;
     private Map<Integer, Map<Integer, Order>> ordersHashMap;
@@ -67,14 +64,16 @@ public class OrderManager {
 
                     String method = (String) objectInputStream.readObject();
                     int orderID = objectInputStream.readInt();
-                    NewOrderSingle newOrderSingle = (NewOrderSingle) objectInputStream.readObject();
 
                     System.out.println(Thread.currentThread().getName() + " calling " + method + ", with OrderID: " + orderID);
 
                     switch (method) { //determine the type of message and process it
                         //call the newOrder message with the clientId and the message (clientMessageId,NewOrderSingle)
                         case "newOrderSingle":
-                            newOrder(clientIndex, orderID, newOrderSingle);
+                            newOrder(clientIndex, orderID, (NewOrderSingle) objectInputStream.readObject());
+                            break;
+                        case "allOrdersComplete":
+                            closeClientConnection(orderID);
                             break;
                         //TODO create a default case which errors with "Unknown message type"+...
                     }
@@ -182,8 +181,21 @@ public class OrderManager {
         orderID++;  // increase order number
     }
 
+    /**
+     * All of a clients orders have been satisfied.
+     * Close the Socket connection
+     */
+    private void closeClientConnection(int clientId) {
+        try {
+            clients[clientId].close();
+        } catch (IOException e) {
+            logger.error("Error attempting to close client:" + clientId + "'s connection");
+            e.printStackTrace();
+        }
+    }
 
-    public void acceptOrder(int orderId, Order order) throws IOException {
+
+    private void acceptOrder(int orderId, Order order) throws IOException {
         if (order.getOrderStatus() != 'A') { //Pending New
             logger.error("Error accepting order that has already been accepted");
             return;
@@ -204,7 +216,7 @@ public class OrderManager {
         objectOutputStream.flush();
     }
 
-    public void sliceOrder(int orderId, int sliceSize, int clientId, int clientOrderId) throws IOException {
+    private void sliceOrder(int orderId, int sliceSize, int clientId, int clientOrderId) throws IOException {
         Order order = ordersHashMap.get(clientId).get(clientOrderId);
 
         if (sliceSize > order.getQuantityRemaining()) {
@@ -253,7 +265,7 @@ public class OrderManager {
         if (slice.getQuantityRemaining() != 0) {
             sliceOrder(orderId, slice.getQuantityRemaining(), clientId, clientOrderId);
         } else {
-            Database.write(slice);
+            Database.insertTradeToDb(String.valueOf(clientId), String.valueOf(clientOrderId), slice.getInstrument().toString(), slice.getQuantity(), slice.getInitialMarketPrice());
 
             sendMessageToClient(slice.getClientId(), message);      // send complete order acknowledgement to client
             logger.info(
