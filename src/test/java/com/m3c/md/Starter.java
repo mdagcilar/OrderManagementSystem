@@ -25,7 +25,7 @@ public class Starter {
         PropertyConfigurator.configure("src/main/resources/log4j.properties");
         logger.info("Start");
 
-        InetSocketAddress[] clients = createClients(3);
+        InetSocketAddress[] clients = createClients(10);
 
         //start sample routers
         (new SampleRouter("Router LSE", 2010)).start();
@@ -57,7 +57,6 @@ public class Starter {
         }
         return clients;
     }
-
 }
 
 class MockClient extends Thread {
@@ -68,28 +67,30 @@ class MockClient extends Thread {
         this.setName(name);
     }
 
+    private NewOrderSingle[] createOrders(int numberOfOrders) {
+        NewOrderSingle[] orderSingles = new NewOrderSingle[numberOfOrders];
+        Random random = new Random();
+        Instrument[] instruments = {new Instrument(new Ric("VOD.L")), new Instrument(new Ric("BP.L")), new Instrument(new Ric("BT.L"))};
+
+        for (int i = 0; i < numberOfOrders; i++) {
+            orderSingles[i] = new NewOrderSingle(random.nextInt(100), random.nextInt(500), (instruments[random.nextInt(instruments.length)]));
+        }
+        return orderSingles;
+    }
+
     public void run() {
         try {
+
             SampleClient sampleClient = new SampleClient(port);
             Random random = new Random();
 
-            NewOrderSingle newOrderSingle = new NewOrderSingle(random.nextInt(50), 1000, new Instrument(new Ric("VOD.L")));
-            NewOrderSingle newOrderSingle2 = new NewOrderSingle(random.nextInt(100), 1000, new Instrument(new Ric("BT.L")));
-            NewOrderSingle newOrderSingle3 = new NewOrderSingle(random.nextInt(20), 5000, new Instrument(new Ric("BP.L")));
-            NewOrderSingle newOrderSingle4 = new NewOrderSingle(random.nextInt(40), 5000, new Instrument(new Ric("BP.L")));
-            NewOrderSingle newOrderSingle5 = new NewOrderSingle(random.nextInt(200), 5000, new Instrument(new Ric("VOD.L")));
+            NewOrderSingle[] orders = createOrders(5);
 
-            sampleClient.sendOrder(newOrderSingle);
-            sampleClient.sendOrder(newOrderSingle2);
-            sampleClient.sendOrder(newOrderSingle3);
-            sampleClient.sendOrder(newOrderSingle4);
-            sampleClient.sendOrder(newOrderSingle5);
+            for (NewOrderSingle newOrderSingle : orders) {
+                sampleClient.sendOrder(newOrderSingle);
+            }
 
             sampleClient.messageHandler();
-
-            //TODO client.sendCancel(id);
-
-
         } catch (IOException e) {
             e.printStackTrace();
         }
