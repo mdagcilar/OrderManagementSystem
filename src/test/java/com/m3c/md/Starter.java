@@ -25,7 +25,7 @@ public class Starter {
         PropertyConfigurator.configure("src/main/resources/log4j.properties");
         logger.info("Start");
 
-        InetSocketAddress[] clients = createClients(10);
+        InetSocketAddress[] clients = createClients(2);
 
         //start sample routers
         (new SampleRouter("Router LSE", 2010)).start();
@@ -34,8 +34,9 @@ public class Starter {
         (new Trader("Trader James", 2020)).start();
         //start order manager
 
-        InetSocketAddress[] routers = {new InetSocketAddress("localhost", 2010),
-                new InetSocketAddress("localhost", 2011)};
+        InetSocketAddress[] routers = {new InetSocketAddress("localhost", 2010)};
+//        InetSocketAddress[] routers = {new InetSocketAddress("localhost", 2010),
+//                new InetSocketAddress("localhost", 2011)};
         InetSocketAddress trader = new InetSocketAddress("localhost", 2020);
 
         LiveMarketData liveMarketData = new SampleLiveMarketData();
@@ -80,11 +81,9 @@ class MockClient extends Thread {
 
     public void run() {
         try {
-
             SampleClient sampleClient = new SampleClient(port);
-            Random random = new Random();
 
-            NewOrderSingle[] orders = createOrders(5);
+            NewOrderSingle[] orders = createOrders(50);
 
             for (NewOrderSingle newOrderSingle : orders) {
                 sampleClient.sendOrder(newOrderSingle);
