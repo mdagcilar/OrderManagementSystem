@@ -25,7 +25,7 @@ public class Starter {
         PropertyConfigurator.configure("src/main/resources/log4j.properties");
         logger.info("Start");
 
-        InetSocketAddress[] clients = createClients(2);
+        InetSocketAddress[] clients = createClients(20);
 
         //start sample routers
         (new SampleRouter("Router LSE", 2010)).start();
@@ -74,7 +74,7 @@ class MockClient extends Thread {
         Instrument[] instruments = {new Instrument(new Ric("VOD.L")), new Instrument(new Ric("BP.L")), new Instrument(new Ric("BT.L"))};
 
         for (int i = 0; i < numberOfOrders; i++) {
-            orderSingles[i] = new NewOrderSingle(random.nextInt(100), random.nextInt(500), (instruments[random.nextInt(instruments.length)]));
+            orderSingles[i] = new NewOrderSingle(random.nextInt(1000), random.nextInt(500), (instruments[random.nextInt(instruments.length)]));
         }
         return orderSingles;
     }
@@ -83,7 +83,7 @@ class MockClient extends Thread {
         try {
             SampleClient sampleClient = new SampleClient(port);
 
-            NewOrderSingle[] orders = createOrders(50);
+            NewOrderSingle[] orders = createOrders(5);
 
             for (NewOrderSingle newOrderSingle : orders) {
                 sampleClient.sendOrder(newOrderSingle);

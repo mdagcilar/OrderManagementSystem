@@ -7,6 +7,7 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.*;
 
+import com.m3c.md.Database.Database;
 import com.m3c.md.LiveMarketData.LiveMarketData;
 import com.m3c.md.OrderClient.NewOrderSingle;
 import com.m3c.md.OrderRouter.Router;
@@ -251,7 +252,7 @@ public class OrderManager {
 //                            + ", Instrument:" + slice.getInstrument()
 //                            + ", Quantity: " + slice.getQuantity() + ", Quantity remaining: " + slice.getQuantityRemaining());
         } else {
-            //Database.insertTradeToDb(String.valueOf(clientId), String.valueOf(clientOrderId), slice.getInstrument().toString(), slice.getQuantity(), slice.getInitialMarketPrice());
+            Database.insertTradeToDb(String.valueOf(clientId), String.valueOf(clientOrderId), slice.getInstrument().toString(), slice.getQuantity(), slice.getInitialMarketPrice());
 
             sendMessageToClient(slice.getClientId(), message);      // send complete order acknowledgement to client
             logger.info(
